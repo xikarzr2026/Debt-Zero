@@ -25,7 +25,7 @@ export const StrategySelector: React.FC = () => {
       id: 'avalanche',
       name: 'Debt Avalanche',
       badge: 'Mathematical Optimum',
-      badgeColor: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
+      badgeColor: 'bg-emerald-500/15 text-emerald-600 text-emerald-400 border-emerald-500/30',
       icon: <Zap className="w-4 h-4 text-emerald-500" />,
       description: 'Targets highest APR first. Minimizes total interest and finishes fastest mathematically.',
       totalInterest: comparison.avalanche.totalInterestPaid,
@@ -37,7 +37,7 @@ export const StrategySelector: React.FC = () => {
       id: 'snowball',
       name: 'Debt Snowball',
       badge: 'Psychological Momentum',
-      badgeColor: 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/30',
+      badgeColor: 'bg-cyan-500/15 text-cyan-600 text-cyan-400 border-cyan-500/30',
       icon: <Flame className="w-4 h-4 text-cyan-500" />,
       description: 'Targets lowest balance first. Gives fast milestone wins to build unstoppable motivation.',
       totalInterest: comparison.snowball.totalInterestPaid,
@@ -48,7 +48,7 @@ export const StrategySelector: React.FC = () => {
       id: 'custom',
       name: 'Custom Priority',
       badge: 'Manual Order',
-      badgeColor: 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30',
+      badgeColor: 'bg-purple-500/15 text-purple-600 text-purple-400 border-purple-500/30',
       icon: <Sliders className="w-4 h-4 text-purple-500" />,
       description: 'Pay down according to your personalized account priority rankings.',
       totalInterest: comparison.custom?.totalInterestPaid || 0,
@@ -59,7 +59,7 @@ export const StrategySelector: React.FC = () => {
       id: 'minimums_only',
       name: 'Minimums Only',
       badge: 'Costly Baseline',
-      badgeColor: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30',
+      badgeColor: 'bg-rose-500/15 text-rose-600 text-rose-400 border-rose-500/30',
       icon: <AlertTriangle className="w-4 h-4 text-rose-500" />,
       description: 'No extra payments applied. The slowest and most expensive trajectory.',
       totalInterest: comparison.baselineMinimums.totalInterestPaid,
@@ -73,20 +73,20 @@ export const StrategySelector: React.FC = () => {
     <div className="w-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
         <div>
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <h2 className="text-lg font-bold text-slate-900 text-white flex items-center gap-2">
             <span>Optimization Strategy</span>
-            <span className="text-xs font-normal text-slate-500 dark:text-slate-400">
+            <span className="text-xs font-normal text-slate-500 text-slate-400">
               (Choose payoff algorithm)
             </span>
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-slate-500 text-slate-400">
             Compare how different allocation rules drastically alter your interest paid and debt-free date.
           </p>
         </div>
 
         {/* Delta Callout */}
         {comparison.avalancheVsSnowballInterestSaved > 0 && (
-          <div className="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full flex items-center gap-1.5 self-start sm:self-auto">
+          <div className="text-xs font-medium text-emerald-600 text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full flex items-center gap-1.5 self-start sm:self-auto">
             <Zap className="w-3 h-3 fill-current" />
             <span>
               Avalanche saves <strong>{formatCurrency(comparison.avalancheVsSnowballInterestSaved)}</strong> more than Snowball!
@@ -105,8 +105,8 @@ export const StrategySelector: React.FC = () => {
               onClick={() => setStrategy(strat.id)}
               className={`text-left p-4 rounded-xl border transition-all relative overflow-hidden flex flex-col justify-between ${
                 isSelected
-                  ? 'bg-slate-900 text-white dark:bg-slate-800/90 border-emerald-500 ring-2 ring-emerald-500/30 shadow-lg'
-                  : 'glass-panel hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-200'
+                  ? 'bg-slate-900 text-white bg-slate-800/90 border-emerald-500 ring-2 ring-emerald-500/30 shadow-lg'
+                  : 'glass-panel hover:border-slate-300 hover:border-slate-700 text-slate-700 text-slate-200'
               }`}
             >
               <div>
@@ -116,7 +116,7 @@ export const StrategySelector: React.FC = () => {
                       className={`w-7 h-7 rounded-lg flex items-center justify-center ${
                         isSelected
                           ? 'bg-emerald-500/20 text-emerald-400'
-                          : 'bg-slate-100 dark:bg-slate-800'
+                          : 'bg-slate-100 bg-slate-800'
                       }`}
                     >
                       {strat.icon}
@@ -141,7 +141,7 @@ export const StrategySelector: React.FC = () => {
 
                 <p
                   className={`text-xs leading-relaxed mb-4 ${
-                    isSelected ? 'text-slate-300' : 'text-slate-500 dark:text-slate-400'
+                    isSelected ? 'text-slate-300' : 'text-slate-500 text-slate-400'
                   }`}
                 >
                   {strat.description}
@@ -151,7 +151,7 @@ export const StrategySelector: React.FC = () => {
               {/* Bottom Metrics Bar */}
               <div
                 className={`pt-3 border-t text-xs flex items-center justify-between ${
-                  isSelected ? 'border-slate-700' : 'border-slate-200 dark:border-slate-800'
+                  isSelected ? 'border-slate-700' : 'border-slate-200 border-slate-800'
                 }`}
               >
                 <div>
@@ -168,9 +168,9 @@ export const StrategySelector: React.FC = () => {
                   <div
                     className={`font-bold text-sm ${
                       strat.isOptimal
-                        ? 'text-emerald-500 dark:text-emerald-400'
+                        ? 'text-emerald-500 text-emerald-400'
                         : strat.isWarning
-                        ? 'text-rose-500 dark:text-rose-400'
+                        ? 'text-rose-500 text-rose-400'
                         : ''
                     }`}
                   >

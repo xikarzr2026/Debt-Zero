@@ -66,7 +66,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 bg-amber-50/70 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal Dialog */}
       <div className="relative w-full max-w-lg rounded-2xl glass-panel border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl p-6 z-10">
@@ -125,7 +125,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
               readOnly
               value={jsonString}
               rows={8}
-              className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 font-mono text-[11px] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 focus:outline-none select-all"
+              className="w-full p-3 rounded-xl bg-amber-50 dark:bg-amber-100 font-mono text-[11px] text-slate-700 dark:text-slate-800 border border-amber-200 dark:border-amber-300 focus:outline-none select-all"
             />
 
             <div className="flex items-center justify-end gap-2 pt-2">
@@ -153,7 +153,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
               onChange={(e) => setImportText(e.target.value)}
               placeholder="Paste exported DebtZero JSON backup here..."
               rows={8}
-              className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 font-mono text-[11px] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="w-full p-3 rounded-xl bg-amber-50 dark:bg-amber-100 font-mono text-[11px] text-slate-700 dark:text-slate-800 border border-amber-200 dark:border-amber-300 focus:outline-none focus:ring-1 focus:ring-emerald-500"
             />
 
             {importStatus && (

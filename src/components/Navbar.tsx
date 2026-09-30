@@ -50,7 +50,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Brand Logo */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-cyan-400 p-[1.5px] shadow-lg shadow-emerald-500/20 flex items-center justify-center">
-            <div className="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center">
+            <div className="w-full h-full bg-amber-50 rounded-[10px] flex items-center justify-center">
               <Zap className="w-5 h-5 text-emerald-400 fill-emerald-400" />
             </div>
           </div>
@@ -72,7 +72,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Middle: Free Cash Flow Status Pill */}
         <button
           onClick={onOpenCashFlow}
-          className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border transition-all hover:scale-[1.02] bg-slate-100/80 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700/80"
+          className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border transition-all hover:scale-[1.02] bg-amber-50/80 border-slate-200"
           title="Click to manage Income & Expenses breakdown"
         >
           <span className="text-slate-500 dark:text-slate-400">Free Cash Flow:</span>

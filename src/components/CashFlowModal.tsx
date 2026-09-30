@@ -62,7 +62,7 @@ export const CashFlowModal: React.FC<CashFlowModalProps> = ({ isOpen, onClose })
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 bg-amber-50/70 backdrop-blur-sm" onClick={onClose} />
 
       {/* Dialog */}
       <div className="relative w-full max-w-2xl rounded-2xl glass-panel border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl p-6 z-10 max-h-[92vh] overflow-y-auto">
@@ -318,7 +318,7 @@ export const CashFlowModal: React.FC<CashFlowModalProps> = ({ isOpen, onClose })
                   step="25"
                   value={profile.manualExtraMonthlySurplus ?? freeCashFlowData.freeCashFlow}
                   onChange={(e) => handleManualSurplusChange(Number(e.target.value))}
-                  className="w-28 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white font-bold text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-28 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-slate-900 font-bold text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
               </div>
             </div>

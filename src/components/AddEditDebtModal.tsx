@@ -87,7 +87,7 @@ export const AddEditDebtModal: React.FC<AddEditDebtModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 bg-amber-50/70 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal Dialog */}
       <div className="relative w-full max-w-lg rounded-2xl glass-panel border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl p-6 z-10 max-h-[90vh] overflow-y-auto">

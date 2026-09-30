@@ -11,13 +11,14 @@
 }
 
 .dark {
-  --background: #060913;
-  --foreground: #f1f5f9;
-  --card-bg: rgba(15, 23, 42, 0.75);
-  --card-border: rgba(30, 41, 59, 0.85);
-  --muted-text: #94a3b8;
-  --accent-primary: #10b981;
-  --accent-secondary: #38bdf8;
+  /* Light prairie palette for bright look */
+  --background: #fafaf5; /* light beige */
+  --foreground: #2d3e50; /* dark slate-blue */
+  --card-bg: rgba(255, 255, 240, 0.85); /* creamy card */
+  --card-border: rgba(200, 200, 180, 0.8); /* muted border */
+  --muted-text: #8b8b83; /* soft gray */
+  --accent-primary: #4a7c59; /* prairie olive */
+  --accent-secondary: #d9a441; /* golden wheat */
 }
 
 body {
