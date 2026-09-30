@@ -5,12 +5,8 @@ import { useDebt } from '@/context/DebtContext';
 import {
   Sparkles,
   Gift,
-  ArrowRight,
   Zap,
-  TrendingDown,
   RotateCcw,
-  CheckCircle,
-  HelpCircle,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -19,12 +15,10 @@ export const WindfallSimulator: React.FC = () => {
     windfall,
     setWindfall,
     resetWindfall,
-    applyWindfallToSurplus,
     comparison,
     formatCurrency,
     debts,
     strategy,
-    effectiveSurplus,
   } = useDebt();
 
   const windfallImpact = comparison.windfallImpact;
@@ -34,7 +28,7 @@ export const WindfallSimulator: React.FC = () => {
       particleCount: 80,
       spread: 70,
       origin: { y: 0.6 },
-      colors: ['#10b981', '#38bdf8', '#fbbf24', '#f43f5e'],
+      colors: ['#15803d', '#d97706', '#0284c7', '#22c55e'],
     });
   };
 
@@ -64,27 +58,27 @@ export const WindfallSimulator: React.FC = () => {
   const targetDebtName = windfallImpact?.recommendedTargetDebtName || 'Top APR Debt';
 
   return (
-    <div className="glass-panel rounded-2xl p-5 sm:p-6 w-full border-cyan-500/20 relative overflow-hidden">
-      {/* Decorative Glow */}
-      <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-cyan-500/10 via-emerald-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+    <div className="glass-panel rounded-2xl p-5 sm:p-6 w-full bg-white/95 border-amber-200/90 shadow-xs relative overflow-hidden">
+      {/* Decorative Warm Prairie Glow */}
+      <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-amber-500/10 via-emerald-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-cyan-500/15 text-cyan-500 flex items-center justify-center border border-cyan-500/30">
+          <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center border border-amber-300 font-bold shadow-2xs">
             <Gift className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-base sm:text-lg font-bold text-slate-900 text-white">
+              <h3 className="text-base sm:text-lg font-bold text-slate-900">
                 Windfall & Lump Sum Allocator
               </h3>
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-600 text-cyan-400 border border-cyan-500/30">
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
                 Bonus / Tax Refund
               </span>
             </div>
-            <p className="text-xs text-slate-500 text-slate-400">
-              Got a bonus, tax refund, gift, or side-hustle cash? Simulate its compounding power.
+            <p className="text-xs text-slate-600">
+              Got a bonus, tax refund, gift, or harvest cash? Simulate its compounding power.
             </p>
           </div>
         </div>
@@ -92,7 +86,7 @@ export const WindfallSimulator: React.FC = () => {
         {windfall.amount > 0 && (
           <button
             onClick={resetWindfall}
-            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors self-start sm:self-auto px-2 py-1 rounded-md hover:bg-slate-800"
+            className="flex items-center gap-1.5 text-xs text-amber-900 hover:text-amber-950 font-bold transition-colors self-start sm:self-auto px-2.5 py-1 rounded-md bg-amber-100/70 hover:bg-amber-100 border border-amber-300 shadow-2xs"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Reset Bonus</span>
@@ -104,13 +98,13 @@ export const WindfallSimulator: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-12 gap-5 mb-5">
         {/* Cash Amount Input & Preset Chips */}
         <div className="md:col-span-7 space-y-3">
-          <label className="text-xs font-semibold text-slate-700 text-slate-300 flex items-center justify-between">
+          <label className="text-xs font-bold text-slate-800 flex items-center justify-between">
             <span>Extra Available Cash</span>
-            <span className="text-slate-400 font-normal">Enter dollar amount or tap presets</span>
+            <span className="text-slate-500 font-normal">Enter dollar amount or tap presets</span>
           </label>
 
           <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-base">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-700 font-black text-lg">
               $
             </span>
             <input
@@ -120,19 +114,19 @@ export const WindfallSimulator: React.FC = () => {
               value={windfall.amount === 0 ? '' : windfall.amount}
               onChange={(e) => handleAmountChange(Number(e.target.value))}
               placeholder="e.g. 1500"
-              className="w-full pl-9 pr-4 py-3 rounded-xl bg-white bg-slate-900/90 border border-slate-300 border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-500 text-slate-900 text-white font-bold text-lg"
+              className="w-full pl-9 pr-4 py-3 rounded-xl bg-white border-2 border-amber-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600 text-slate-900 font-black text-lg shadow-2xs"
             />
           </div>
 
           {/* Quick preset buttons */}
           <div className="flex flex-wrap items-center gap-2 pt-1">
-            <span className="text-[11px] text-slate-400">Quick add:</span>
+            <span className="text-[11px] text-slate-500 font-semibold">Quick add:</span>
             {[250, 500, 1000, 2500, 5000].map((preset) => (
               <button
                 key={preset}
                 type="button"
                 onClick={() => handleQuickAdd(preset)}
-                className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 bg-slate-800 text-slate-700 text-slate-300 hover:bg-cyan-500/20 hover:text-cyan-400 border border-slate-200 border-slate-700/80 transition-all active:scale-95"
+                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-300 transition-all active:scale-95 shadow-2xs"
               >
                 +${preset.toLocaleString()}
               </button>
@@ -142,7 +136,7 @@ export const WindfallSimulator: React.FC = () => {
 
         {/* Application Mode & Allocation Target */}
         <div className="md:col-span-5 space-y-3">
-          <label className="text-xs font-semibold text-slate-700 text-slate-300">
+          <label className="text-xs font-bold text-slate-800">
             Allocation Mode
           </label>
 
@@ -152,12 +146,12 @@ export const WindfallSimulator: React.FC = () => {
               onClick={() => setWindfall({ ...windfall, type: 'one_time' })}
               className={`p-2.5 rounded-xl border text-xs font-semibold text-left transition-all ${
                 windfall.type === 'one_time'
-                  ? 'bg-cyan-500/15 border-cyan-500/40 text-cyan-600 text-cyan-300 ring-1 ring-cyan-500/30'
-                  : 'bg-white bg-slate-800/60 border-slate-200 border-slate-700 text-slate-600 text-slate-400'
+                  ? 'bg-emerald-50 border-2 border-emerald-600 text-emerald-900 ring-2 ring-emerald-500/20 shadow-xs'
+                  : 'bg-white border-amber-200 text-slate-700 hover:bg-amber-50'
               }`}
             >
               <div className="font-bold">One-Time Lump Sum</div>
-              <div className="text-[10px] font-normal text-slate-400 mt-0.5">Applied immediately</div>
+              <div className="text-[10px] font-normal text-slate-500 mt-0.5">Applied immediately</div>
             </button>
 
             <button
@@ -165,24 +159,24 @@ export const WindfallSimulator: React.FC = () => {
               onClick={() => setWindfall({ ...windfall, type: 'monthly_extra' })}
               className={`p-2.5 rounded-xl border text-xs font-semibold text-left transition-all ${
                 windfall.type === 'monthly_extra'
-                  ? 'bg-cyan-500/15 border-cyan-500/40 text-cyan-600 text-cyan-300 ring-1 ring-cyan-500/30'
-                  : 'bg-white bg-slate-800/60 border-slate-200 border-slate-700 text-slate-600 text-slate-400'
+                  ? 'bg-emerald-50 border-2 border-emerald-600 text-emerald-900 ring-2 ring-emerald-500/20 shadow-xs'
+                  : 'bg-white border-amber-200 text-slate-700 hover:bg-amber-50'
               }`}
             >
               <div className="font-bold">Recurring Extra</div>
-              <div className="text-[10px] font-normal text-slate-400 mt-0.5">Added every month</div>
+              <div className="text-[10px] font-normal text-slate-500 mt-0.5">Added every month</div>
             </button>
           </div>
 
           {/* Target Account Selector */}
           <div>
-            <label className="text-[11px] font-medium text-slate-400 block mb-1">
+            <label className="text-[11px] font-bold text-slate-700 block mb-1">
               Target Creditor / Account
             </label>
             <select
               value={windfall.targetDebtId || 'auto_optimal'}
               onChange={(e) => setWindfall({ ...windfall, targetDebtId: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg bg-white bg-slate-900 border border-slate-300 border-slate-700 text-xs text-slate-800 text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+              className="w-full px-3 py-2 rounded-lg bg-white border border-amber-200 text-xs text-slate-800 font-semibold focus:outline-none focus:ring-1 focus:ring-emerald-500 shadow-2xs"
             >
               <option value="auto_optimal">⚡ Auto-Optimal ({strategy} recommendation)</option>
               {debts.map((d) => (
@@ -197,27 +191,27 @@ export const WindfallSimulator: React.FC = () => {
 
       {/* Dynamic Real-time Impact Banner */}
       {windfall.amount > 0 ? (
-        <div className="p-4 sm:p-5 rounded-xl bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-cyan-500/15 border border-emerald-500/30">
+        <div className="p-4 sm:p-5 rounded-xl bg-gradient-to-r from-emerald-50 via-amber-50/70 to-emerald-50 border-2 border-emerald-500/40 shadow-sm">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-emerald-400" />
-                <span className="font-bold text-sm sm:text-base text-slate-900 text-white">
+                <Sparkles className="w-5 h-5 text-emerald-700" />
+                <span className="font-extrabold text-sm sm:text-base text-slate-900">
                   Windfall Impact Assessment
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-slate-700 text-slate-200 leading-relaxed">
-                Applying <strong className="text-emerald-400">{formatCurrency(windfall.amount)}</strong>{' '}
+              <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
+                Applying <strong className="text-emerald-800 font-bold">{formatCurrency(windfall.amount)}</strong>{' '}
                 {windfall.type === 'one_time' ? 'as a lump sum' : 'monthly'}{' '}
-                to <strong className="text-cyan-400">{targetDebtName}</strong>{' '}
+                to <strong className="text-amber-800 font-bold">{targetDebtName}</strong>{' '}
                 {monthsSaved > 0 ? (
                   <>
-                    shaves <strong className="text-emerald-400">{monthsSaved} months</strong> off your timeline and
-                    saves <strong className="text-emerald-400">{formatCurrency(interestSaved)}</strong> in avoided interest!
+                    shaves <strong className="text-emerald-800 font-extrabold">{monthsSaved} months</strong> off your timeline and
+                    saves <strong className="text-emerald-800 font-extrabold">{formatCurrency(interestSaved)}</strong> in avoided interest!
                   </>
                 ) : (
                   <>
-                    saves <strong className="text-emerald-400">{formatCurrency(interestSaved)}</strong> in interest!
+                    saves <strong className="text-emerald-800 font-extrabold">{formatCurrency(interestSaved)}</strong> in interest!
                   </>
                 )}
               </p>
@@ -227,33 +221,33 @@ export const WindfallSimulator: React.FC = () => {
               <button
                 type="button"
                 onClick={triggerConfetti}
-                className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/25 hover:from-emerald-400 hover:to-teal-400 transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-700 to-emerald-600 text-white font-bold text-xs shadow-md shadow-emerald-700/20 hover:from-emerald-600 hover:to-emerald-500 transition-all flex items-center justify-center gap-1.5 active:scale-95"
               >
-                <Zap className="w-4 h-4 fill-current" />
+                <Zap className="w-4 h-4 fill-current text-amber-300" />
                 <span>Simulate & Celebrate</span>
               </button>
             </div>
           </div>
 
           {/* Quick Before & After Stats */}
-          <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-emerald-500/20 text-center">
+          <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-emerald-300/60 text-center">
             <div>
-              <div className="text-[10px] text-slate-400 uppercase font-semibold">New Debt-Free Date</div>
-              <div className="font-extrabold text-sm text-emerald-400">{newDate}</div>
+              <div className="text-[10px] text-slate-600 uppercase font-bold">New Debt-Free Date</div>
+              <div className="font-black text-sm text-emerald-800">{newDate}</div>
             </div>
             <div>
-              <div className="text-[10px] text-slate-400 uppercase font-semibold">Interest Avoided</div>
-              <div className="font-extrabold text-sm text-emerald-400">+{formatCurrency(interestSaved)}</div>
+              <div className="text-[10px] text-slate-600 uppercase font-bold">Interest Avoided</div>
+              <div className="font-black text-sm text-emerald-800">+{formatCurrency(interestSaved)}</div>
             </div>
             <div>
-              <div className="text-[10px] text-slate-400 uppercase font-semibold">Months Accelerated</div>
-              <div className="font-extrabold text-sm text-emerald-400">{monthsSaved} mos faster</div>
+              <div className="text-[10px] text-slate-600 uppercase font-bold">Months Accelerated</div>
+              <div className="font-black text-sm text-emerald-800">{monthsSaved} mos faster</div>
             </div>
           </div>
         </div>
       ) : (
-        <div className="p-4 rounded-xl bg-slate-100/60 bg-slate-900/40 border border-slate-200 border-slate-800 text-center">
-          <p className="text-xs text-slate-500 text-slate-400">
+        <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 text-center">
+          <p className="text-xs text-slate-600 font-medium">
             Type any bonus amount above or click a quick-add chip (e.g. +$1,000) to see how much interest you can eliminate.
           </p>
         </div>

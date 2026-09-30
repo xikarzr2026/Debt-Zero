@@ -7,9 +7,7 @@ import {
   ChevronRight,
   Download,
   Search,
-  Filter,
   Flag,
-  FileSpreadsheet,
 } from 'lucide-react';
 
 export const AmortizationTable: React.FC = () => {
@@ -93,19 +91,19 @@ export const AmortizationTable: React.FC = () => {
   };
 
   return (
-    <div className="glass-panel rounded-2xl p-5 sm:p-6 w-full">
+    <div className="glass-panel rounded-2xl p-5 sm:p-6 w-full bg-white/95 border-amber-200/90 shadow-xs">
       {/* Header & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+            <h3 className="text-base sm:text-lg font-bold text-slate-900">
               Amortization Waterfall Schedule
             </h3>
-            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
               {schedule.length} months total
             </span>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-600 mt-0.5">
             Full ledger showing compound interest, principal reduction, and balances month by month.
           </p>
         </div>
@@ -119,17 +117,17 @@ export const AmortizationTable: React.FC = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search month or card..."
-              className="pl-8 pr-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 w-44"
+              className="pl-8 pr-3 py-1.5 rounded-lg bg-white border border-amber-200 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 w-48 shadow-2xs"
             />
           </div>
 
           {/* Export CSV button */}
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white/60 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-200 bg-white hover:bg-amber-50 text-xs font-bold text-slate-800 transition-colors shadow-2xs"
             title="Download Amortization Table as CSV"
           >
-            <Download className="w-3.5 h-3.5 text-emerald-500" />
+            <Download className="w-3.5 h-3.5 text-emerald-700" />
             <span>CSV Export</span>
           </button>
         </div>
@@ -137,7 +135,7 @@ export const AmortizationTable: React.FC = () => {
 
       {/* Waterfall Schedule Table */}
       {visibleSchedule.length === 0 ? (
-        <div className="text-center py-8 text-xs text-slate-400">
+        <div className="text-center py-8 text-xs text-slate-500 bg-amber-50/30 rounded-xl border border-amber-200">
           No months matched your search term.
         </div>
       ) : (
@@ -151,17 +149,17 @@ export const AmortizationTable: React.FC = () => {
                 key={snap.monthIndex}
                 className={`rounded-xl border transition-all ${
                   hasMilestone
-                    ? 'border-emerald-500/40 bg-emerald-500/5 dark:bg-emerald-950/20'
-                    : 'border-slate-200 dark:border-slate-800/80 bg-white/40 dark:bg-slate-800/30'
+                    ? 'border-2 border-emerald-500/60 bg-emerald-50/40 shadow-xs'
+                    : 'border-amber-200/80 bg-white shadow-2xs'
                 }`}
               >
                 {/* Month Summary Header Row */}
                 <div
                   onClick={() => toggleMonth(snap.monthIndex)}
-                  className="p-3.5 flex flex-wrap items-center justify-between gap-3 cursor-pointer hover:bg-slate-100/50 dark:hover:bg-slate-800/60 rounded-xl transition-colors text-xs"
+                  className="p-3.5 flex flex-wrap items-center justify-between gap-3 cursor-pointer hover:bg-amber-50/50 rounded-xl transition-colors text-xs"
                 >
                   <div className="flex items-center gap-3">
-                    <button className="text-slate-400 hover:text-slate-200">
+                    <button className="text-amber-800 hover:text-amber-950 font-bold">
                       {isExpanded ? (
                         <ChevronDown className="w-4 h-4" />
                       ) : (
@@ -171,17 +169,17 @@ export const AmortizationTable: React.FC = () => {
 
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-slate-900 dark:text-white">
+                        <span className="font-black text-sm text-slate-900">
                           Month {snap.monthIndex}: {snap.dateFormatted}
                         </span>
                         {hasMilestone && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                            <Flag className="w-2.5 h-2.5" />
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            <Flag className="w-2.5 h-2.5 text-emerald-700" />
                             {snap.paidOffDebtsThisMonth.join(', ')} PAID OFF!
                           </span>
                         )}
                       </div>
-                      <span className="text-[11px] text-slate-400">
+                      <span className="text-[11px] text-slate-500 font-medium">
                         {snap.remainingDebtsCount} accounts remaining
                       </span>
                     </div>
@@ -190,29 +188,29 @@ export const AmortizationTable: React.FC = () => {
                   {/* Summary Metric Stats */}
                   <div className="flex items-center gap-4 sm:gap-6 text-right">
                     <div>
-                      <div className="text-[10px] text-slate-400 uppercase font-semibold">Payment</div>
-                      <div className="font-bold text-slate-900 dark:text-white">
+                      <div className="text-[10px] text-slate-500 uppercase font-semibold">Payment</div>
+                      <div className="font-bold text-slate-900">
                         {formatCurrency(snap.totalPayment)}
                       </div>
                     </div>
 
                     <div>
-                      <div className="text-[10px] text-slate-400 uppercase font-semibold">Interest</div>
-                      <div className="font-semibold text-rose-500">
+                      <div className="text-[10px] text-slate-500 uppercase font-semibold">Interest</div>
+                      <div className="font-bold text-rose-700">
                         {formatCurrency(snap.totalInterestCharged)}
                       </div>
                     </div>
 
                     <div>
-                      <div className="text-[10px] text-slate-400 uppercase font-semibold">Principal</div>
-                      <div className="font-semibold text-emerald-500">
+                      <div className="text-[10px] text-slate-500 uppercase font-semibold">Principal</div>
+                      <div className="font-bold text-emerald-800">
                         {formatCurrency(snap.totalPrincipalPaid)}
                       </div>
                     </div>
 
                     <div className="min-w-20">
-                      <div className="text-[10px] text-slate-400 uppercase font-semibold">End Balance</div>
-                      <div className="font-extrabold text-slate-900 dark:text-white">
+                      <div className="text-[10px] text-slate-500 uppercase font-semibold">End Balance</div>
+                      <div className="font-black text-slate-900">
                         {formatCurrency(snap.totalEndingBalance)}
                       </div>
                     </div>
@@ -221,10 +219,10 @@ export const AmortizationTable: React.FC = () => {
 
                 {/* Expanded Account Level Detail */}
                 {isExpanded && (
-                  <div className="px-4 pb-3 pt-1 border-t border-slate-200 dark:border-slate-800/80 overflow-x-auto">
+                  <div className="px-4 pb-3 pt-1 border-t border-amber-200/80 overflow-x-auto bg-amber-50/20">
                     <table className="w-full text-left text-[11px]">
                       <thead>
-                        <tr className="text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
+                        <tr className="text-amber-950 font-bold border-b border-amber-200">
                           <th className="py-2 pl-2">Account</th>
                           <th className="py-2 text-right">Start Balance</th>
                           <th className="py-2 text-right">Interest</th>
@@ -234,38 +232,38 @@ export const AmortizationTable: React.FC = () => {
                           <th className="py-2 text-right pr-2">End Balance</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                      <tbody className="divide-y divide-amber-100">
                         {snap.payments.map((p) => (
                           <tr
                             key={p.debtId}
-                            className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/40 ${
-                              p.isPaidOffThisMonth ? 'bg-emerald-500/10 font-bold' : ''
+                            className={`hover:bg-amber-50/60 ${
+                              p.isPaidOffThisMonth ? 'bg-emerald-100/50 font-bold' : ''
                             }`}
                           >
-                            <td className="py-2 pl-2 font-medium text-slate-900 dark:text-slate-200 flex items-center gap-1.5">
+                            <td className="py-2 pl-2 font-bold text-slate-900 flex items-center gap-1.5">
                               <span>{p.debtName}</span>
                               {p.isPaidOffThisMonth && (
-                                <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500 text-white font-extrabold">
+                                <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-700 text-white font-black">
                                   PAID OFF
                                 </span>
                               )}
                             </td>
-                            <td className="py-2 text-right text-slate-500">
+                            <td className="py-2 text-right text-slate-600 font-medium">
                               {formatCurrency(p.startBalance)}
                             </td>
-                            <td className="py-2 text-right text-rose-500">
+                            <td className="py-2 text-right text-rose-700 font-bold">
                               +{formatCurrency(p.interestCharged)}
                             </td>
-                            <td className="py-2 text-right text-slate-600 dark:text-slate-400">
+                            <td className="py-2 text-right text-slate-700 font-semibold">
                               {formatCurrency(p.minPayment)}
                             </td>
-                            <td className="py-2 text-right text-emerald-500 font-semibold">
+                            <td className="py-2 text-right text-emerald-800 font-extrabold">
                               {p.extraPayment > 0 ? `+${formatCurrency(p.extraPayment)}` : '—'}
                             </td>
-                            <td className="py-2 text-right font-bold text-slate-900 dark:text-white">
+                            <td className="py-2 text-right font-black text-slate-900">
                               {formatCurrency(p.totalPayment)}
                             </td>
-                            <td className="py-2 text-right pr-2 font-bold text-slate-900 dark:text-white">
+                            <td className="py-2 text-right pr-2 font-black text-slate-900">
                               {formatCurrency(p.endBalance)}
                             </td>
                           </tr>
@@ -285,7 +283,7 @@ export const AmortizationTable: React.FC = () => {
         <div className="mt-4 text-center">
           <button
             onClick={() => setVisibleCount((prev) => prev + 24)}
-            className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/60 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors"
+            className="px-4 py-2 rounded-xl border border-amber-200 bg-white hover:bg-amber-50 text-xs font-bold text-slate-800 transition-colors shadow-2xs"
           >
             Show Next 24 Months ({filteredSchedule.length - visibleSchedule.length} remaining)
           </button>

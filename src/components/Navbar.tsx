@@ -6,16 +6,10 @@ import { PRESET_SCENARIOS } from '@/lib/presets';
 import { SUPPORTED_CURRENCIES, CurrencyCode } from '@/types/debt';
 import {
   Zap,
-  Moon,
   Sun,
   Download,
-  Upload,
-  RotateCcw,
   Sparkles,
-  TrendingDown,
   ChevronDown,
-  DollarSign,
-  Layers,
   HelpCircle,
 } from 'lucide-react';
 
@@ -31,8 +25,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenHelp,
 }) => {
   const {
-    theme,
-    toggleTheme,
     profile,
     updateProfile,
     freeCashFlowData,
@@ -45,25 +37,25 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [currencyDropdownOpen, setCurrencyDropdownOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 w-full glass-panel border-b border-slate-200/80 dark:border-slate-800/80 backdrop-blur-md">
+    <header className="sticky top-0 z-40 w-full bg-white/95 border-b border-amber-200/80 backdrop-blur-md shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         {/* Brand Logo */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-cyan-400 p-[1.5px] shadow-lg shadow-emerald-500/20 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-700 via-emerald-600 to-amber-500 p-[1.5px] shadow-md shadow-emerald-700/15 flex items-center justify-center">
             <div className="w-full h-full bg-amber-50 rounded-[10px] flex items-center justify-center">
-              <Zap className="w-5 h-5 text-emerald-400 fill-emerald-400" />
+              <Zap className="w-5 h-5 text-emerald-700 fill-emerald-700" />
             </div>
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">
-                DebtZero
+              <span className="text-xl font-black tracking-tight text-slate-900">
+                Debt<span className="text-emerald-700">Zero</span>
               </span>
-              <span className="text-[10px] font-semibold tracking-wider uppercase px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                Engine v2.0
+              <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                Prairie Edition
               </span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">
+            <p className="text-xs text-slate-500 hidden sm:block">
               Intelligent Debt Elimination & Payoff Engine
             </p>
           </div>
@@ -72,20 +64,20 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Middle: Free Cash Flow Status Pill */}
         <button
           onClick={onOpenCashFlow}
-          className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border transition-all hover:scale-[1.02] bg-amber-50/80 border-slate-200"
+          className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border transition-all hover:scale-[1.02] bg-amber-50/90 border-amber-200/90 shadow-xs"
           title="Click to manage Income & Expenses breakdown"
         >
-          <span className="text-slate-500 dark:text-slate-400">Free Cash Flow:</span>
+          <span className="text-slate-600">Free Cash Flow:</span>
           <span
-            className={`font-semibold ${
+            className={`font-bold ${
               freeCashFlowData.isDeficit
-                ? 'text-rose-600 dark:text-rose-400'
-                : 'text-emerald-600 dark:text-emerald-400'
+                ? 'text-rose-700'
+                : 'text-emerald-700'
             }`}
           >
             {formatCurrency(freeCashFlowData.freeCashFlow)}/mo
           </span>
-          <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+          <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-200/80 text-amber-900 font-semibold">
             Edit
           </span>
         </button>
@@ -99,9 +91,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                 setPresetDropdownOpen(!presetDropdownOpen);
                 setCurrencyDropdownOpen(false);
               }}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700/80 bg-white/60 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors text-slate-700 dark:text-slate-200"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-amber-200 bg-white hover:bg-amber-50 transition-colors text-slate-700 shadow-xs"
             >
-              <Sparkles className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
+              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
               <span className="hidden sm:inline">Presets</span>
               <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
             </button>
@@ -112,8 +104,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className="fixed inset-0 z-40"
                   onClick={() => setPresetDropdownOpen(false)}
                 />
-                <div className="absolute right-0 mt-2 w-72 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-900 shadow-2xl p-2 z-50">
-                  <div className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                <div className="absolute right-0 mt-2 w-72 rounded-xl border border-amber-200 bg-white shadow-xl p-2 z-50">
+                  <div className="px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider text-amber-800">
                     Load Demo Financial Profile
                   </div>
                   {PRESET_SCENARIOS.map((preset) => {
@@ -127,17 +119,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                         }}
                         className={`w-full text-left p-2 rounded-lg text-xs transition-colors flex flex-col gap-0.5 ${
                           isSelected
-                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
-                            : 'hover:bg-slate-100 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-300'
+                            ? 'bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold'
+                            : 'hover:bg-amber-50 text-slate-700'
                         }`}
                       >
                         <div className="flex items-center justify-between font-semibold">
                           <span>{preset.name}</span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200/60 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
                             {preset.badge}
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                        <p className="text-[11px] text-slate-500 line-clamp-1">
                           {preset.tagline}
                         </p>
                       </button>
@@ -155,9 +147,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                 setCurrencyDropdownOpen(!currencyDropdownOpen);
                 setPresetDropdownOpen(false);
               }}
-              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700/80 bg-white/60 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors text-slate-700 dark:text-slate-200"
+              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-amber-200 bg-white hover:bg-amber-50 transition-colors text-slate-700 shadow-xs"
             >
-              <span className="font-semibold text-emerald-500">
+              <span className="font-bold text-emerald-700">
                 {SUPPORTED_CURRENCIES[profile.currency as CurrencyCode]?.symbol || '$'}
               </span>
               <span className="hidden sm:inline">{profile.currency}</span>
@@ -170,7 +162,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className="fixed inset-0 z-40"
                   onClick={() => setCurrencyDropdownOpen(false)}
                 />
-                <div className="absolute right-0 mt-2 w-40 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-900 shadow-2xl p-1 z-50">
+                <div className="absolute right-0 mt-2 w-40 rounded-xl border border-amber-200 bg-white shadow-xl p-1 z-50">
                   {Object.values(SUPPORTED_CURRENCIES).map((curr) => (
                     <button
                       key={curr.code}
@@ -180,12 +172,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                       }}
                       className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between ${
                         profile.currency === curr.code
-                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold'
-                          : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                          ? 'bg-emerald-50 text-emerald-800 font-bold'
+                          : 'hover:bg-amber-50 text-slate-700'
                       }`}
                     >
                       <span>{curr.label}</span>
-                      <span className="text-slate-400">{curr.symbol}</span>
+                      <span className="text-amber-800 font-bold">{curr.symbol}</span>
                     </button>
                   ))}
                 </div>
@@ -196,33 +188,28 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Data Backup / Import */}
           <button
             onClick={onOpenImportExport}
-            className="p-2 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700/80 bg-white/60 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors text-slate-600 dark:text-slate-300"
+            className="p-2 text-xs font-medium rounded-lg border border-amber-200 bg-white hover:bg-amber-50 transition-colors text-slate-700 shadow-xs"
             title="Import / Export Data"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-4 h-4 text-emerald-700" />
           </button>
 
           {/* How It Works Guide */}
           <button
             onClick={onOpenHelp}
-            className="p-2 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700/80 bg-white/60 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors text-slate-600 dark:text-slate-300"
+            className="p-2 text-xs font-medium rounded-lg border border-amber-200 bg-white hover:bg-amber-50 transition-colors text-slate-700 shadow-xs"
             title="Financial Engine Guide"
           >
-            <HelpCircle className="w-4 h-4" />
+            <HelpCircle className="w-4 h-4 text-amber-700" />
           </button>
 
-          {/* Theme Toggle */}
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-lg border border-slate-200 dark:border-slate-700/80 bg-white/60 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors text-slate-600 dark:text-slate-300"
-            title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} mode`}
+          {/* Theme Indicator (Sun for Prairie Daylight) */}
+          <div
+            className="p-2 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 shadow-xs"
+            title="Prairie Daylight Theme Active"
           >
-            {theme === 'dark' ? (
-              <Sun className="w-4 h-4 text-amber-400" />
-            ) : (
-              <Moon className="w-4 h-4 text-indigo-500" />
-            )}
-          </button>
+            <Sun className="w-4 h-4 text-amber-600 fill-amber-400" />
+          </div>
         </div>
       </div>
     </header>

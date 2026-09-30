@@ -86,19 +86,16 @@ export function DebtProvider({ children }: { children: ReactNode }) {
     targetDebtId: 'auto_optimal',
   });
   const [currentPresetId, setCurrentPresetId] = useState<string | null>(defaultPreset.id);
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [theme, setTheme] = useState<'dark' | 'light'>('light');
   const [checklistCompletedMap, setChecklistCompletedMap] = useState<Record<string, boolean>>({});
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Load from localStorage on mount
   useEffect(() => {
     try {
-      const savedTheme = localStorage.getItem(THEME_KEY) as 'dark' | 'light' | null;
-      if (savedTheme) {
-        setTheme(savedTheme);
-      } else {
-        setTheme('dark');
-      }
+      // Prairie Light Theme is the standard default
+      setTheme('light');
+      localStorage.setItem(THEME_KEY, 'light');
 
       const savedData = localStorage.getItem(STORAGE_KEY);
       if (savedData) {
@@ -135,21 +132,18 @@ export function DebtProvider({ children }: { children: ReactNode }) {
     }
   }, [profile, debts, strategy, windfall, currentPresetId, checklistCompletedMap, isLoaded]);
 
-  // Sync theme to document element class
+  // Sync theme to document element class (clean light theme)
   useEffect(() => {
     if (typeof document !== 'undefined') {
       const root = document.documentElement;
-      if (theme === 'dark') {
-        root.classList.add('dark');
-      } else {
-        root.classList.remove('dark');
-      }
-      localStorage.setItem(THEME_KEY, theme);
+      root.classList.remove('dark');
+      localStorage.setItem(THEME_KEY, 'light');
     }
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+    // Keep light theme active
+    setTheme('light');
   };
 
   const currencyConfig = SUPPORTED_CURRENCIES[profile.currency as CurrencyCode] || SUPPORTED_CURRENCIES.USD;

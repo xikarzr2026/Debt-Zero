@@ -1,24 +1,26 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --card-bg: rgba(255, 255, 255, 0.85);
-  --card-border: rgba(226, 232, 240, 0.8);
+  --background: #fbf9f4;
+  --foreground: #1e293b;
+  --card-bg: rgba(255, 255, 255, 0.94);
+  --card-border: rgba(226, 218, 196, 0.8);
   --muted-text: #64748b;
-  --accent-primary: #059669;
-  --accent-secondary: #0284c7;
+  --accent-primary: #15803d; /* Prairie Green */
+  --accent-secondary: #d97706; /* Saskatchewan Golden Wheat */
+  --accent-sky: #0284c7; /* Living Skies Blue */
 }
 
+/* Ensure any .dark class remains bright & warm Saskatchewan prairie light theme */
 .dark {
-  /* Light prairie palette for bright look */
-  --background: #fafaf5; /* light beige */
-  --foreground: #2d3e50; /* dark slate-blue */
-  --card-bg: rgba(255, 255, 240, 0.85); /* creamy card */
-  --card-border: rgba(200, 200, 180, 0.8); /* muted border */
-  --muted-text: #8b8b83; /* soft gray */
-  --accent-primary: #4a7c59; /* prairie olive */
-  --accent-secondary: #d9a441; /* golden wheat */
+  --background: #fbf9f4;
+  --foreground: #1e293b;
+  --card-bg: rgba(255, 255, 255, 0.94);
+  --card-border: rgba(226, 218, 196, 0.8);
+  --muted-text: #64748b;
+  --accent-primary: #15803d;
+  --accent-secondary: #d97706;
+  --accent-sky: #0284c7;
 }
 
 body {
@@ -27,36 +29,45 @@ body {
   font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
   min-height: 100vh;
   overflow-x: hidden;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(245, 158, 11, 0.07) 0px, transparent 40%),
+    radial-gradient(at 100% 0%, rgba(22, 163, 74, 0.06) 0px, transparent 40%),
+    radial-gradient(at 50% 100%, rgba(217, 119, 6, 0.05) 0px, transparent 50%);
   transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-/* Glassmorphism card styles */
+/* Glassmorphism card styles with warm prairie borders */
 .glass-panel {
   background: var(--card-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border: 1px solid var(--card-border);
+  box-shadow: 0 4px 20px -2px rgba(180, 130, 40, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
 }
 
 .glass-panel-hover {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .glass-panel-hover:hover {
-  border-color: rgba(56, 189, 248, 0.4);
-  box-shadow: 0 10px 30px -10px rgba(16, 185, 129, 0.15);
+  border-color: rgba(217, 119, 6, 0.5);
+  box-shadow: 0 10px 25px -5px rgba(217, 119, 6, 0.12), 0 8px 10px -6px rgba(22, 163, 74, 0.06);
 }
 
 /* Glowing accents */
 .glow-emerald {
-  box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 0 25px -5px rgba(22, 163, 74, 0.25);
+}
+
+.glow-amber {
+  box-shadow: 0 0 25px -5px rgba(217, 119, 6, 0.25);
 }
 
 .glow-cyan {
-  box-shadow: 0 0 25px -5px rgba(56, 189, 248, 0.3);
+  box-shadow: 0 0 25px -5px rgba(2, 132, 199, 0.25);
 }
 
 .glow-rose {
-  box-shadow: 0 0 25px -5px rgba(244, 63, 94, 0.3);
+  box-shadow: 0 0 25px -5px rgba(225, 29, 72, 0.25);
 }
 
 /* Custom modern scrollbars */
@@ -68,11 +79,11 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.25);
+  background: rgba(217, 119, 6, 0.25);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.45);
+  background: rgba(217, 119, 6, 0.45);
 }
 
 /* Number input spinners removal */
