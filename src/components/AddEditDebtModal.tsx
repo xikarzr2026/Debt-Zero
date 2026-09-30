@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { DebtItem, DebtCategory } from '@/types/debt';
 import { DEBT_CATEGORY_LABELS } from '@/lib/presets';
 import { X } from 'lucide-react';
@@ -12,42 +12,19 @@ interface AddEditDebtModalProps {
   editingDebt?: DebtItem | null;
 }
 
-export const AddEditDebtModal: React.FC<AddEditDebtModalProps> = ({
-  isOpen,
+const AddEditDebtForm: React.FC<AddEditDebtModalProps> = ({
   onClose,
   onSave,
   editingDebt,
 }) => {
-  const [name, setName] = useState('');
-  const [category, setCategory] = useState<DebtCategory>('credit_card');
-  const [balance, setBalance] = useState('');
-  const [apr, setApr] = useState('');
-  const [minPayment, setMinPayment] = useState('');
-  const [dueDate, setDueDate] = useState('15');
-  const [notes, setNotes] = useState('');
-  const [customPriority, setCustomPriority] = useState('1');
-
-  useEffect(() => {
-    if (editingDebt) {
-      setName(editingDebt.name);
-      setCategory(editingDebt.category);
-      setBalance(String(editingDebt.balance));
-      setApr(String(editingDebt.apr));
-      setMinPayment(String(editingDebt.minPayment));
-      setDueDate(String(editingDebt.dueDate || 15));
-      setNotes(editingDebt.notes || '');
-      setCustomPriority(String(editingDebt.customPriority || 1));
-    } else {
-      setName('');
-      setCategory('credit_card');
-      setBalance('');
-      setApr('24.99');
-      setMinPayment('');
-      setDueDate('15');
-      setNotes('');
-      setCustomPriority('1');
-    }
-  }, [editingDebt, isOpen]);
+  const [name, setName] = useState(editingDebt?.name || '');
+  const [category, setCategory] = useState<DebtCategory>(editingDebt?.category || 'credit_card');
+  const [balance, setBalance] = useState(editingDebt ? String(editingDebt.balance) : '');
+  const [apr, setApr] = useState(editingDebt ? String(editingDebt.apr) : '24.99');
+  const [minPayment, setMinPayment] = useState(editingDebt ? String(editingDebt.minPayment) : '');
+  const [dueDate, setDueDate] = useState(editingDebt ? String(editingDebt.dueDate || 15) : '15');
+  const [notes, setNotes] = useState(editingDebt?.notes || '');
+  const customPriority = editingDebt?.customPriority || 1;
 
   // When changing category for a new debt, prepopulate typical APR
   const handleCategoryChange = (newCat: DebtCategory) => {
@@ -57,8 +34,6 @@ export const AddEditDebtModal: React.FC<AddEditDebtModalProps> = ({
       if (typical) setApr(String(typical));
     }
   };
-
-  if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +50,7 @@ export const AddEditDebtModal: React.FC<AddEditDebtModalProps> = ({
       apr: numApr,
       minPayment: numMin,
       dueDate: parseInt(dueDate) || 15,
-      customPriority: parseInt(customPriority) || 1,
+      customPriority,
       notes: notes.trim(),
       color: DEBT_CATEGORY_LABELS[category]?.defaultColor || '#d97706',
     };
@@ -254,4 +229,9 @@ export const AddEditDebtModal: React.FC<AddEditDebtModalProps> = ({
       </div>
     </div>
   );
+};
+
+export const AddEditDebtModal: React.FC<AddEditDebtModalProps> = (props) => {
+  if (!props.isOpen) return null;
+  return <AddEditDebtForm key={props.editingDebt ? props.editingDebt.id : 'new-debt'} {...props} />;
 };

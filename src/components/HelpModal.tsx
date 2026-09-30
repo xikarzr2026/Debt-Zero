@@ -73,7 +73,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
           <div className="p-4 rounded-xl bg-amber-50/40 border border-amber-200 space-y-2 shadow-2xs">
             <div className="flex items-center gap-2 font-black text-sm text-slate-900">
               <Sparkles className="w-4 h-4 text-amber-600" />
-              <span>The Exponential "Rollover" Multiplier</span>
+              <span>The Exponential &quot;Rollover&quot; Multiplier</span>
             </div>
             <p>
               When an account reaches a $0 balance, its minimum payment is not spent! Instead, that freed-up minimum is added to your discretionary surplus and rolled over into the next target debt. This creates an exponential payoff curve that accelerates rapidly toward the end.
@@ -96,7 +96,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
               onClick={onClose}
               className="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-black text-xs shadow-md shadow-emerald-700/20 transition-all active:scale-95"
             >
-              Got it, let's eliminate debt!
+              Got it, let&apos;s eliminate debt!
             </button>
           </div>
         </div>

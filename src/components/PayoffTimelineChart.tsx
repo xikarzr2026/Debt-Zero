@@ -43,11 +43,23 @@ export const PayoffTimelineChart: React.FC = () => {
       180
     );
 
-    const data: any[] = [];
+    interface TimelineChartPoint {
+      monthIndex: number;
+      date: string;
+      activeBalance: number;
+      baselineBalance: number;
+      windfallBalance?: number | null;
+      activeInterestCumulative: number;
+      baselineInterestCumulative: number;
+      milestone: string | null;
+      [key: string]: string | number | null | undefined;
+    }
+
+    const data: TimelineChartPoint[] = [];
 
     // Initial point (Month 0 / Today)
     const initialTotalBalance = debts.reduce((sum, d) => sum + (Number(d.balance) || 0), 0);
-    const initialPoint: any = {
+    const initialPoint: TimelineChartPoint = {
       monthIndex: 0,
       date: 'Start',
       activeBalance: initialTotalBalance,
@@ -80,7 +92,7 @@ export const PayoffTimelineChart: React.FC = () => {
       if (activeSnap) activeCumInterest += activeSnap.totalInterestCharged;
       if (baseSnap) baselineCumInterest += baseSnap.totalInterestCharged;
 
-      const point: any = {
+      const point: TimelineChartPoint = {
         monthIndex: i + 1,
         date: dateStr,
         activeBalance: activeSnap ? activeSnap.totalEndingBalance : 0,
@@ -344,13 +356,13 @@ export const PayoffTimelineChart: React.FC = () => {
                           {label} — Balances by Account
                         </div>
                         <div className="space-y-1">
-                          {payload.map((item: any, idx: number) => (
+                          {payload.map((item, idx: number) => (
                             <div key={idx} className="flex justify-between gap-4">
                               <span style={{ color: item.color }} className="font-semibold">
-                                {item.name}:
+                                {String(item.name)}:
                               </span>
                               <span className="font-bold text-slate-900">
-                                {formatCurrency(item.value)}
+                                {formatCurrency(Number(item.value) || 0)}
                               </span>
                             </div>
                           ))}

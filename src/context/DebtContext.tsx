@@ -20,7 +20,7 @@ import {
   generateMonthChecklist,
   normalizeToMonthlyIncome,
 } from '@/lib/debtEngine';
-import { PRESET_SCENARIOS, PresetScenario } from '@/lib/presets';
+import { PRESET_SCENARIOS } from '@/lib/presets';
 
 interface ChecklistItemState {
   debtId: string;
@@ -93,13 +93,12 @@ export function DebtProvider({ children }: { children: ReactNode }) {
   // Load from localStorage on mount
   useEffect(() => {
     try {
-      // Prairie Light Theme is the standard default
-      setTheme('light');
       localStorage.setItem(THEME_KEY, 'light');
 
       const savedData = localStorage.getItem(STORAGE_KEY);
       if (savedData) {
         const parsed = JSON.parse(savedData);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (parsed.profile) setProfileState(parsed.profile);
         if (parsed.debts) setDebtsState(parsed.debts);
         if (parsed.strategy) setStrategy(parsed.strategy);

@@ -17,7 +17,7 @@ export const AmortizationTable: React.FC = () => {
   const [visibleCount, setVisibleCount] = useState(24);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const schedule = activePlan.schedule || [];
+  const schedule = useMemo(() => activePlan.schedule || [], [activePlan.schedule]);
 
   const toggleMonth = (monthIndex: number) => {
     setExpandedMonths((prev) => ({

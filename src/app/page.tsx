@@ -18,10 +18,7 @@ import {
   CreditCard,
   Gift,
   FileSpreadsheet,
-  CheckSquare,
   ShieldCheck,
-  TrendingDown,
-  Sparkles,
   Zap,
 } from 'lucide-react';
 

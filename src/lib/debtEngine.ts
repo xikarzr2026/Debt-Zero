@@ -303,11 +303,10 @@ export function simulatePayoffSchedule({
       monthTotalInterest += interest;
 
       // Base payment is the minimum
-      let paymentForDebt = state.minPaymentRequired;
-      let extraForDebt = 0;
+      const paymentForDebt = state.minPaymentRequired;
 
       // Principal portion from minimum
-      let principalFromMin = Math.max(0, paymentForDebt - interest);
+      const principalFromMin = Math.max(0, paymentForDebt - interest);
       debt.currentBalance = Math.max(0, debt.currentBalance + interest - paymentForDebt);
 
       // Store initial state for extra allocation pass

@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { useDebt } from '@/context/DebtContext';
 import { DebtItem, DebtCategory } from '@/types/debt';
-import { DEBT_CATEGORY_LABELS } from '@/lib/presets';
 import { AddEditDebtModal } from './AddEditDebtModal';
 import {
   Plus,
