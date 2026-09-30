@@ -1,4 +1,4 @@
-import {
+import type {
   DebtItem,
   DebtCategory,
   OptimizationStrategy,
@@ -9,7 +9,7 @@ import {
   PayoffStrategyResult,
   EngineComparison,
   PayFrequency,
-} from '@/types/debt';
+} from '../types/debt.ts';
 
 /**
  * Standard monthly compounding interest formula
@@ -54,7 +54,9 @@ export function calculateFreeCashFlow(
   isDeficit: boolean;
   debtToIncomeRatio: number; // Percentage of income eaten by minimum debt payments
 } {
-  const totalMin = debts.reduce((sum, d) => sum + (Number(d.minPayment) || 0), 0);
+  const totalMin = debts
+    .filter((d) => (Number(d.balance) || 0) > 0)
+    .reduce((sum, d) => sum + (Number(d.minPayment) || 0), 0);
   const fcf = Number((monthlyIncome - livingExpenses - totalMin).toFixed(2));
   const dti = monthlyIncome > 0 ? Number(((totalMin / monthlyIncome) * 100).toFixed(1)) : 0;
 
@@ -107,24 +109,30 @@ export function detectNegativeAmortization(debts: DebtItem[]): Array<{
 /**
  * Sorts active debts according to the selected strategy
  */
-export function sortDebtsByStrategy(
-  debts: Array<{ id: string; name: string; balance: number; apr: number; minPayment: number; customPriority: number }>,
+export function sortDebtsByStrategy<
+  T extends { id: string; name: string; balance: number; apr: number; minPayment: number; customPriority?: number; currentBalance?: number }
+>(
+  debts: T[],
   strategy: OptimizationStrategy
-): typeof debts {
+): T[] {
   const list = [...debts];
 
   switch (strategy) {
     case 'avalanche':
-      // Highest APR first; if tied, lowest balance first
+      // Highest APR first; if tied, lowest current balance first
       return list.sort((a, b) => {
         if (b.apr !== a.apr) return b.apr - a.apr;
-        return a.balance - b.balance;
+        const balA = a.currentBalance ?? a.balance;
+        const balB = b.currentBalance ?? b.balance;
+        return balA - balB;
       });
 
     case 'snowball':
-      // Lowest balance first; if tied, highest APR first
+      // Lowest current balance first; if tied, highest APR first
       return list.sort((a, b) => {
-        if (a.balance !== b.balance) return a.balance - b.balance;
+        const balA = a.currentBalance ?? a.balance;
+        const balB = b.currentBalance ?? b.balance;
+        if (balA !== balB) return balA - balB;
         return b.apr - a.apr;
       });
 
@@ -223,6 +231,7 @@ export function simulatePayoffSchedule({
 
   let totalInterestAllTime = 0;
   let totalPrincipalAllTime = 0;
+  let totalAmountPaidAllTime = 0;
   let month = 0;
 
   // Track rolled-over freed minimum payments from eliminated debts
@@ -304,17 +313,18 @@ export function simulatePayoffSchedule({
 
       // Base payment is the minimum
       const paymentForDebt = state.minPaymentRequired;
+      const startBal = debt.currentBalance;
 
       // Principal portion from minimum
       const principalFromMin = Math.max(0, paymentForDebt - interest);
-      debt.currentBalance = Math.max(0, debt.currentBalance + interest - paymentForDebt);
+      debt.currentBalance = Number(Math.max(0, debt.currentBalance + interest - paymentForDebt).toFixed(2));
 
       // Store initial state for extra allocation pass
       paymentsThisMonth.push({
         debtId: debt.id,
         debtName: debt.name,
         category: debt.category,
-        startBalance: Number((debt.currentBalance + paymentForDebt - interest).toFixed(2)),
+        startBalance: Number(startBal.toFixed(2)),
         interestCharged: interest,
         principalPaid: principalFromMin,
         minPayment: paymentForDebt,
@@ -345,14 +355,14 @@ export function simulatePayoffSchedule({
         if (!liveDebt || !paymentRecord || liveDebt.currentBalance <= 0.01) continue;
 
         const amountToPayoff = liveDebt.currentBalance;
-        const extraToApply = Math.min(availableExtra, amountToPayoff);
+        const extraToApply = Number(Math.min(availableExtra, amountToPayoff).toFixed(2));
 
-        liveDebt.currentBalance -= extraToApply;
-        availableExtra -= extraToApply;
+        liveDebt.currentBalance = Number(Math.max(0, liveDebt.currentBalance - extraToApply).toFixed(2));
+        availableExtra = Number(Math.max(0, availableExtra - extraToApply).toFixed(2));
 
-        paymentRecord.extraPayment += extraToApply;
-        paymentRecord.principalPaid += extraToApply;
-        paymentRecord.totalPayment += extraToApply;
+        paymentRecord.extraPayment = Number((paymentRecord.extraPayment + extraToApply).toFixed(2));
+        paymentRecord.principalPaid = Number((paymentRecord.principalPaid + extraToApply).toFixed(2));
+        paymentRecord.totalPayment = Number((paymentRecord.totalPayment + extraToApply).toFixed(2));
         paymentRecord.endBalance = liveDebt.currentBalance;
       }
     }
@@ -390,6 +400,7 @@ export function simulatePayoffSchedule({
 
     totalInterestAllTime += monthTotalInterest;
     totalPrincipalAllTime += monthTotalPrincipal;
+    totalAmountPaidAllTime += monthTotalPayment;
 
     const endBalanceThisMonth = activeDebts.reduce((sum, d) => sum + d.currentBalance, 0);
     const remainingCount = activeDebts.filter((d) => d.currentBalance > 0.01).length;
@@ -421,7 +432,7 @@ export function simulatePayoffSchedule({
     debtFreeDateObj: finalDate,
     totalInterestPaid: Number(totalInterestAllTime.toFixed(2)),
     totalPrincipalPaid: Number(totalPrincipalAllTime.toFixed(2)),
-    totalAmountPaid: Number((totalInterestAllTime + totalPrincipalAllTime).toFixed(2)),
+    totalAmountPaid: Number(totalAmountPaidAllTime.toFixed(2)),
     monthlySurplusUsed: monthlySurplus,
     schedule,
     milestones,
@@ -587,6 +598,6 @@ export function generateMonthChecklist(
     };
   });
 
-  // Sort by due date (1-31)
-  return items.sort((a, b) => a.dueDate - b.dueDate);
+  // Sort by due date (1-31), tie-break by total payment descending
+  return items.sort((a, b) => a.dueDate - b.dueDate || b.totalPayment - a.totalPayment);
 }

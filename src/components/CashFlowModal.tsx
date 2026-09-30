@@ -27,7 +27,6 @@ export const CashFlowModal: React.FC<CashFlowModalProps> = ({ isOpen, onClose })
     updateExpensesBreakdown,
     freeCashFlowData,
     formatCurrency,
-    debts,
   } = useDebt();
 
   if (!isOpen) return null;
@@ -54,7 +53,7 @@ export const CashFlowModal: React.FC<CashFlowModalProps> = ({ isOpen, onClose })
     other: 0,
   };
 
-  const totalMinDebtPayments = debts.reduce((sum, d) => sum + (Number(d.minPayment) || 0), 0);
+  const totalMinDebtPayments = freeCashFlowData.totalMinimumDebtPayments;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

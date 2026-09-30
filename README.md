@@ -1,7 +1,8 @@
 # 🚀 DebtZero: Intelligent Debt Elimination & Payoff Engine
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-success?style=for-the-badge&logo=github)](https://xikarzr2026.github.io/Debt-Zero/)
-[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![Version](https://img.shields.io/badge/Version-1.0.0-emerald?style=for-the-badge)](package.json)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-blue?style=for-the-badge&logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
@@ -107,6 +108,25 @@
    ```
    http://localhost:3000
    ```
+
+---
+
+## 🧪 Automated Mathematical Verification & Test Suite
+
+DebtZero includes an automated mathematical verification suite that rigorously tests all financial calculations, amortization schedules, negative amortization detectors, and strategy sorting algorithms:
+
+```bash
+npm test
+```
+
+### Verified Mathematical Modules:
+- **Monthly Compounding Interest**: Exact precision rounding to the cent (`balance * (apr / 100 / 12)`).
+- **Pay Frequency Normalization**: Accurate conversion across weekly, bi-weekly, semi-monthly, and monthly paychecks.
+- **Free Cash Flow & DTI**: Accurate surplus determination excluding retired/zero-balance liabilities.
+- **Negative Amortization Alerting**: Automatic warning when contractual minimums do not cover monthly interest accrual.
+- **Accounting Invariant Identity**: Proves `Ending Balance = Starting Balance + Interest Charged - Total Payments` across every month.
+- **Multi-Strategy Optimization**: Proves Debt Avalanche produces minimal lifetime interest and Snowball accelerates initial debt eliminations.
+- **Windfall Acceleration**: Verifies interest and months saved under one-time and recurring lump-sum simulations.
 
 ---
 

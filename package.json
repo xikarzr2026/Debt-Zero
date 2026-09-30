@@ -1,12 +1,14 @@
 {
   "name": "debt-zero",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --experimental-strip-types --test test/math.test.ts"
   },
   "dependencies": {
     "canvas-confetti": "^1.9.4",

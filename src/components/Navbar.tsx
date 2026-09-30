@@ -52,7 +52,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 Debt<span className="text-emerald-700">Zero</span>
               </span>
               <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
-                Prairie Edition
+                Prairie v1.0
               </span>
             </div>
             <p className="text-xs text-slate-500 hidden sm:block">
