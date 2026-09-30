@@ -53,11 +53,17 @@
   - **JPY** (¥)
   - **MXN** (MX$)
 
-### 8. 🔒 100% Privacy & Offline-First Storage
-- **Zero Server Tracking**: Your financial data never leaves your device. All calculations and records run entirely client-side.
-- **LocalStorage Persistence**: Auto-saves your debt inventory and settings in browser storage.
-- **Data Portability**: Full JSON backup and restore functionality to export your data or import it on another device.
-- **Instant Demo Dataset**: One-click demo loader to test all features immediately.
+---
+
+## 🔒 Data Storage & Privacy: Where Does Your Info Go?
+
+> **Short Answer**: Nowhere. **100% of your data stays strictly on your personal device.**
+
+- **Zero Remote Servers or Databases**: DebtZero does not operate any backend database, cloud sync, or external tracking servers. None of your debts, balances, interest rates, income, or personal numbers are ever transmitted over the network.
+- **Client-Side `localStorage` Only**: All financial records, custom payoff settings, and checklists are saved exclusively in your browser's private `localStorage` sandbox (`debtzero_userdata_v1`).
+- **No Accounts or Bank Linking**: You never have to sign up, enter an email, connect a bank account, or provide personal credentials.
+- **Full Portability & Backups**: You can export an offline `.json` file of your complete financial plan at any time and import it on any other machine or browser via the **Backup & Restore** button in the header.
+- **Data Removal**: Clearing your browser's site data/cache or closing a private/incognito browsing window will instantly wipe all stored data from your device.
 
 ---
 
