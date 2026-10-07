@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useDebt } from '@/context/DebtContext';
+import { csvCell } from '@/lib/utils';
 import {
   ChevronDown,
   ChevronRight,
@@ -64,8 +65,8 @@ export const AmortizationTable: React.FC = () => {
       s.payments.forEach((p) => {
         rows.push([
           String(s.monthIndex),
-          s.dateFormatted,
-          `"${p.debtName}"`,
+          csvCell(s.dateFormatted),
+          csvCell(p.debtName),
           p.startBalance.toFixed(2),
           p.interestCharged.toFixed(2),
           p.principalPaid.toFixed(2),
@@ -87,7 +88,7 @@ export const AmortizationTable: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   return (
@@ -154,18 +155,20 @@ export const AmortizationTable: React.FC = () => {
                 }`}
               >
                 {/* Month Summary Header Row */}
-                <div
+                <button
+                  type="button"
                   onClick={() => toggleMonth(snap.monthIndex)}
-                  className="p-3.5 flex flex-wrap items-center justify-between gap-3 cursor-pointer hover:bg-amber-50/50 rounded-xl transition-colors text-xs"
+                  aria-expanded={isExpanded}
+                  className="w-full p-3.5 flex flex-wrap items-center justify-between gap-3 cursor-pointer hover:bg-amber-50/50 rounded-xl transition-colors text-xs text-left"
                 >
                   <div className="flex items-center gap-3">
-                    <button className="text-amber-800 hover:text-amber-950 font-bold">
+                    <span className="text-amber-800 font-bold" aria-hidden="true">
                       {isExpanded ? (
                         <ChevronDown className="w-4 h-4" />
                       ) : (
                         <ChevronRight className="w-4 h-4" />
                       )}
-                    </button>
+                    </span>
 
                     <div>
                       <div className="flex items-center gap-2">
@@ -215,7 +218,7 @@ export const AmortizationTable: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                </div>
+                </button>
 
                 {/* Expanded Account Level Detail */}
                 {isExpanded && (

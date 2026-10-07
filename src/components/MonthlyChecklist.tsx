@@ -12,6 +12,7 @@ import {
   RotateCcw,
   Sparkles,
 } from 'lucide-react';
+import { ordinal } from '@/lib/utils';
 import confetti from 'canvas-confetti';
 
 export const MonthlyChecklist: React.FC = () => {
@@ -56,15 +57,19 @@ export const MonthlyChecklist: React.FC = () => {
       '',
       ...currentMonthSnapshot.payments.map((p) => {
         const debt = debts.find((d) => d.id === p.debtId);
-        const due = debt?.dueDate ? `Due: ${debt.dueDate}th` : 'Due: mid-month';
+        const due = debt?.dueDate ? `Due: ${ordinal(debt.dueDate)}` : 'Due: mid-month';
         const extra = p.extraPayment > 0 ? ` (Min: ${formatCurrency(p.minPayment)} + Extra: ${formatCurrency(p.extraPayment)})` : '';
         return `• ${p.debtName}: ${formatCurrency(p.totalPayment)}${extra} [${due}]`;
       }),
     ];
 
-    navigator.clipboard.writeText(lines.join('\n'));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    navigator.clipboard.writeText(lines.join('\n')).then(
+      () => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      },
+      () => setCopied(false)
+    );
   };
 
   return (
@@ -145,10 +150,11 @@ export const MonthlyChecklist: React.FC = () => {
           const isDone = !!checklist.find((c) => c.debtId === p.debtId)?.completed;
 
           return (
-            <div
+            <button
+              type="button"
               key={p.debtId}
               onClick={() => handleToggle(p.debtId)}
-              className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+              className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
                 isDone
                   ? 'bg-emerald-50/60 border-emerald-300 opacity-80'
                   : isTargeted
@@ -157,8 +163,7 @@ export const MonthlyChecklist: React.FC = () => {
               }`}
             >
               <div className="flex items-center gap-3">
-                <button
-                  type="button"
+                <span
                   className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
                     isDone
                       ? 'text-emerald-700'
@@ -166,7 +171,7 @@ export const MonthlyChecklist: React.FC = () => {
                   }`}
                 >
                   {isDone ? <CheckCircle2 className="w-6 h-6 fill-emerald-600 text-white" /> : <Circle className="w-5 h-5" />}
-                </button>
+                </span>
 
                 <div>
                   <div className="flex items-center gap-2">
@@ -191,7 +196,7 @@ export const MonthlyChecklist: React.FC = () => {
                   <div className="flex items-center gap-3 text-[11px] text-slate-500 font-medium mt-0.5">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3 h-3 text-slate-400" />
-                      Due by {debt?.dueDate ? `${debt.dueDate}th` : '15th'}
+                      Due by {debt?.dueDate ? ordinal(debt.dueDate) : ordinal(15)}
                     </span>
                     <span>•</span>
                     <span>
@@ -226,7 +231,7 @@ export const MonthlyChecklist: React.FC = () => {
                   {formatCurrency(p.totalPayment)}
                 </div>
               </div>
-            </div>
+            </button>
           );
         })}
       </div>

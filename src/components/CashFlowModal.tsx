@@ -3,6 +3,7 @@
 import React from 'react';
 import { useDebt } from '@/context/DebtContext';
 import { PayFrequency } from '@/types/debt';
+import { ModalShell } from './ModalShell';
 import {
   X,
   Wallet,
@@ -27,6 +28,7 @@ export const CashFlowModal: React.FC<CashFlowModalProps> = ({ isOpen, onClose })
     updateExpensesBreakdown,
     freeCashFlowData,
     formatCurrency,
+    currencyConfig,
   } = useDebt();
 
   if (!isOpen) return null;
@@ -40,7 +42,12 @@ export const CashFlowModal: React.FC<CashFlowModalProps> = ({ isOpen, onClose })
   };
 
   const handleManualSurplusChange = (val: number) => {
+    if (!Number.isFinite(val)) return;
     updateProfile({ manualExtraMonthlySurplus: Math.max(0, val) });
+  };
+
+  const clearManualSurplus = () => {
+    updateProfile({ manualExtraMonthlySurplus: undefined });
   };
 
   const breakdown = profile.expensesBreakdown || {
@@ -56,12 +63,7 @@ export const CashFlowModal: React.FC<CashFlowModalProps> = ({ isOpen, onClose })
   const totalMinDebtPayments = freeCashFlowData.totalMinimumDebtPayments;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div className="fixed inset-0 bg-slate-900/30 backdrop-blur-xs" onClick={onClose} />
-
-      {/* Dialog */}
-      <div className="relative w-full max-w-2xl rounded-2xl bg-white border-2 border-amber-200 shadow-2xl p-6 z-10 max-h-[92vh] overflow-y-auto">
+    <ModalShell isOpen={isOpen} onClose={onClose} title="Budget & Cash Flow" panelClassName="max-w-2xl">
         <div className="flex items-center justify-between pb-4 border-b border-amber-200">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center justify-center">
@@ -303,11 +305,13 @@ export const CashFlowModal: React.FC<CashFlowModalProps> = ({ isOpen, onClose })
                   Extra Monthly Payoff Target (Surplus applied)
                 </span>
                 <p className="text-[11px] text-slate-600">
-                  You can override or manually target how much extra to channel.
+                  {profile.manualExtraMonthlySurplus != null
+                    ? 'Override is on. The plan uses this number, not free cash flow.'
+                    : 'Leave this matching free cash flow, or set an override.'}
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-emerald-800 font-black text-base">$</span>
+                <span className="text-emerald-800 font-black text-base">{currencyConfig.symbol}</span>
                 <input
                   type="number"
                   min="0"
@@ -316,6 +320,15 @@ export const CashFlowModal: React.FC<CashFlowModalProps> = ({ isOpen, onClose })
                   onChange={(e) => handleManualSurplusChange(Number(e.target.value))}
                   className="w-28 px-3 py-1.5 rounded-lg bg-white border-2 border-emerald-600 text-slate-900 font-black text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
                 />
+                {profile.manualExtraMonthlySurplus != null && (
+                  <button
+                    type="button"
+                    onClick={clearManualSurplus}
+                    className="text-[11px] font-bold text-emerald-800 underline"
+                  >
+                    Use cash flow
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -329,7 +342,6 @@ export const CashFlowModal: React.FC<CashFlowModalProps> = ({ isOpen, onClose })
             </button>
           </div>
         </div>
-      </div>
-    </div>
+    </ModalShell>
   );
 };

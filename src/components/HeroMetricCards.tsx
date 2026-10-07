@@ -86,10 +86,16 @@ export const HeroMetricCards: React.FC<HeroMetricCardsProps> = ({ onOpenCashFlow
           </div>
         </div>
         <div className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 flex items-baseline gap-2">
-          <span>{activePlan.debtFreeDate || 'Calculating...'}</span>
+          <span className={activePlan.unpayable ? 'text-rose-700 text-xl' : ''}>
+            {activePlan.unpayable ? 'Does not pay off' : activePlan.debtFreeDate || 'Calculating...'}
+          </span>
         </div>
         <div className="mt-3 flex items-center gap-1.5">
-          {monthsSaved > 0 ? (
+          {activePlan.unpayable ? (
+            <span className="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 text-xs font-semibold border border-rose-200">
+              Still owes {formatCurrency(activePlan.remainingBalance)}
+            </span>
+          ) : monthsSaved > 0 ? (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold text-xs border border-emerald-300">
               <Zap className="w-3 h-3 fill-current text-emerald-600" />
               Saves {yearsSaved > 0 ? `${yearsSaved}y ` : ''}
@@ -101,7 +107,7 @@ export const HeroMetricCards: React.FC<HeroMetricCardsProps> = ({ onOpenCashFlow
             </span>
           )}
           <span className="text-xs text-slate-500 font-medium">
-            ({activePlan.totalMonths} mos)
+            {activePlan.unpayable ? `(capped at ${activePlan.totalMonths} mos)` : `(${activePlan.totalMonths} mos)`}
           </span>
         </div>
         <div className="mt-2 text-[11px] text-slate-500 font-medium">

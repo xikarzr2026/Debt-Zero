@@ -241,3 +241,89 @@ test('10. generateMonthChecklist - ordering & focus debt', () => {
   assert.equal(checklist[1].isFocusDebt, true);
   assert.equal(checklist[1].extraPayment, 200);
 });
+
+test('11. unpayable plans are not labeled debt-free', () => {
+  const result = simulatePayoffSchedule({
+    debts: [createDebt({ id: 't', name: 'Trap', balance: 20000, apr: 24, minPayment: 50 })],
+    monthlySurplus: 0,
+    strategy: 'minimums_only',
+    startDate: new Date(2026, 0, 1),
+    maxMonths: 12,
+  });
+  assert.equal(result.unpayable, true);
+  assert.equal(result.debtFreeDate, 'Does not pay off');
+  assert.ok(result.remainingBalance > 20000);
+});
+
+test('12. explicit windfall target is the debt that receives the extra', () => {
+  const debts = [
+    createDebt({ id: 'hi', name: 'HighAPR', balance: 5000, apr: 24, minPayment: 100 }),
+    createDebt({ id: 'lo', name: 'LowAPR', balance: 5000, apr: 5, minPayment: 100 }),
+  ];
+  const comparison = runEngineComparison({
+    debts,
+    monthlySurplus: 0,
+    windfall: { amount: 2000, type: 'one_time', targetDebtId: 'lo' },
+    startDate: new Date(2026, 0, 1),
+    activeStrategy: 'avalanche',
+  });
+  const month1 = comparison.windfallAvalanche!.schedule[0].payments;
+  assert.equal(month1.find((p) => p.debtId === 'lo')!.extraPayment, 2000);
+  assert.equal(month1.find((p) => p.debtId === 'hi')!.extraPayment, 0);
+  assert.equal(comparison.windfallImpact!.appliedTargetDebtName, 'LowAPR');
+  assert.equal(comparison.windfallImpact!.recommendedTargetDebtName, 'HighAPR');
+});
+
+test('13. negative surplus does not create extra payments', () => {
+  const result = simulatePayoffSchedule({
+    debts: [createDebt({ id: 'a', name: 'A', balance: 1000, apr: 12, minPayment: 100 })],
+    monthlySurplus: -500,
+    strategy: 'avalanche',
+    startDate: new Date(2026, 0, 1),
+  });
+  assert.equal(result.schedule[0].payments[0].extraPayment, 0);
+  assert.equal(result.schedule[0].payments[0].totalPayment, 100);
+  assert.equal(result.unpayable, false);
+});
+
+test('14. final payment is capped at balance plus interest', () => {
+  const result = simulatePayoffSchedule({
+    debts: [createDebt({ id: 'a', name: 'A', balance: 50, apr: 0, minPayment: 100 })],
+    monthlySurplus: 0,
+    strategy: 'minimums_only',
+    startDate: new Date(2026, 0, 1),
+  });
+  assert.equal(result.totalMonths, 1);
+  assert.equal(result.schedule[0].payments[0].totalPayment, 50);
+  assert.equal(result.schedule[0].totalEndingBalance, 0);
+});
+
+test('15. import rejects non-finite numbers and keeps valid debts', async () => {
+  const { parseDebtBackup } = await import('../src/lib/debtEngine.ts');
+  const bad = parseDebtBackup(JSON.stringify({
+    profile: { name: 'x', currency: 'USD', payFrequency: 'monthly', incomePerPeriod: 'nope', expensesBreakdown: { housing: 1 } },
+    debts: [{ id: '1', name: 'A', balance: '5000', apr: 'nope', minPayment: '100' }],
+  }));
+  assert.equal(bad.success, false);
+
+  const ok = parseDebtBackup(JSON.stringify({
+    profile: { name: 'x', currency: 'CAD', payFrequency: 'monthly', incomePerPeriod: 4000, expensesBreakdown: { housing: 1000 } },
+    debts: [
+      { id: '1', name: '=CMD', balance: '5000', apr: '24', minPayment: '100', dueDate: 2 },
+      { id: '1', name: 'Dup', balance: 100, apr: 5, minPayment: 25 },
+    ],
+    strategy: 'not-a-strategy',
+  }));
+  assert.equal(ok.success, true);
+  assert.equal(ok.debts!.length, 2);
+  assert.equal(ok.debts![0].apr, 24);
+  assert.equal(ok.debts![0].balance, 5000);
+  assert.notEqual(ok.debts![0].id, ok.debts![1].id);
+  assert.equal(ok.strategy, undefined);
+  assert.equal(ok.profile!.currency, 'CAD');
+});
+
+test('16. JPY interest rounds to whole yen', () => {
+  assert.equal(calculateMonthlyInterest(100000, 12, 0), 1000);
+  assert.equal(calculateMonthlyInterest(100, 12, 0), 1);
+});

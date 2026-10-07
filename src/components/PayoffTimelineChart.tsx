@@ -35,7 +35,11 @@ export const PayoffTimelineChart: React.FC = () => {
   const chartData = useMemo(() => {
     const activeSchedule = activePlan.schedule || [];
     const baselineSchedule = comparison.baselineMinimums.schedule || [];
-    const windfallSchedule = comparison.windfallAvalanche?.schedule || [];
+    const windfallSchedule =
+      (activePlan.strategy === 'snowball'
+        ? comparison.windfallSnowball
+        : comparison.windfallAvalanche
+      )?.schedule || [];
 
     // Max length to show
     const maxMonths = Math.min(
@@ -69,7 +73,7 @@ export const PayoffTimelineChart: React.FC = () => {
       milestone: null,
     };
     debts.forEach((d) => {
-      initialPoint[d.name] = d.balance;
+      initialPoint[`debt:${d.id}`] = d.balance;
     });
     data.push(initialPoint);
 
@@ -79,18 +83,18 @@ export const PayoffTimelineChart: React.FC = () => {
     let activeCumInterest = 0;
     let baselineCumInterest = 0;
 
-    for (let i = 0; i < maxMonths; i += step) {
+    for (let i = 0; i < maxMonths; i++) {
       const activeSnap = activeSchedule[i];
       const baseSnap = baselineSchedule[i];
+      if (activeSnap) activeCumInterest += activeSnap.totalInterestCharged;
+      if (baseSnap) baselineCumInterest += baseSnap.totalInterestCharged;
+      if (i % step !== 0 && i !== maxMonths - 1) continue;
+
       const windfallSnap = windfallSchedule[i];
 
       if (!activeSnap && !baseSnap) break;
 
       const dateStr = activeSnap?.dateFormatted || baseSnap?.dateFormatted || `M${i + 1}`;
-
-      // Cumulative interest
-      if (activeSnap) activeCumInterest += activeSnap.totalInterestCharged;
-      if (baseSnap) baselineCumInterest += baseSnap.totalInterestCharged;
 
       const point: TimelineChartPoint = {
         monthIndex: i + 1,
@@ -108,7 +112,7 @@ export const PayoffTimelineChart: React.FC = () => {
       // Individual debt balances for stacked view
       if (activeSnap) {
         activeSnap.payments.forEach((p) => {
-          point[p.debtName] = p.endBalance;
+          point[`debt:${p.debtId}`] = p.endBalance;
         });
       }
 
@@ -378,7 +382,7 @@ export const PayoffTimelineChart: React.FC = () => {
                 <Area
                   key={debt.id}
                   type="monotone"
-                  dataKey={debt.name}
+                  dataKey={`debt:${debt.id}`}
                   name={debt.name}
                   stackId="1"
                   stroke={debtColors[index % debtColors.length]}

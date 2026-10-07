@@ -6,7 +6,7 @@ We provide security updates and patches for the following versions:
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.1.x (main branch) | :white_check_mark: |
+| 1.0.x (main branch) | :white_check_mark: |
 
 ---
 

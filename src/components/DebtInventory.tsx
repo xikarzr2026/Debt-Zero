@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useDebt } from '@/context/DebtContext';
 import { DebtItem, DebtCategory } from '@/types/debt';
+import { ordinal } from '@/lib/utils';
 import { AddEditDebtModal } from './AddEditDebtModal';
 import {
   Plus,
@@ -246,7 +247,7 @@ export const DebtInventory: React.FC = () => {
 
                     {/* Due Day */}
                     <td className="py-3.5 text-center text-slate-600 font-medium">
-                      {debt.dueDate ? `${debt.dueDate}th` : '15th'}
+                      {debt.dueDate ? ordinal(debt.dueDate) : ordinal(15)}
                     </td>
 
                     {/* Custom Priority Reordering */}

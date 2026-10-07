@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useDebt } from '@/context/DebtContext';
+import { ModalShell } from './ModalShell';
 import {
   X,
   Download,
@@ -32,9 +33,13 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
   const jsonString = exportDataJSON();
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(jsonString);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    navigator.clipboard.writeText(jsonString).then(
+      () => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      },
+      () => setCopied(false)
+    );
   };
 
   const handleDownload = () => {
@@ -44,11 +49,14 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
     link.href = url;
     link.download = `debtzero-backup-${new Date().toISOString().split('T')[0]}.json`;
     link.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const handleImport = () => {
     if (!importText.trim()) return;
+    if (!window.confirm('Replace the current plan with this backup? This cannot be undone unless you exported first.')) {
+      return;
+    }
     const res = importDataJSON(importText);
     if (res.success) {
       setImportStatus({ success: true, message: 'Financial profile imported successfully!' });
@@ -62,12 +70,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div className="fixed inset-0 bg-slate-900/30 backdrop-blur-xs" onClick={onClose} />
-
-      {/* Modal Dialog */}
-      <div className="relative w-full max-w-lg rounded-2xl bg-white border-2 border-amber-200 shadow-2xl p-6 z-10">
+    <ModalShell isOpen={isOpen} onClose={onClose} title="Data Management & Backup">
         <div className="flex items-center justify-between pb-4 border-b border-amber-200">
           <div>
             <h3 className="text-lg font-black text-slate-900">
@@ -183,7 +186,6 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
             </div>
           </div>
         )}
-      </div>
-    </div>
+    </ModalShell>
   );
 };

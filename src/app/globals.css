@@ -11,6 +11,18 @@
   --accent-sky: #0284c7; /* Living Skies Blue */
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* Ensure any .dark class remains bright & warm Saskatchewan prairie light theme */
 .dark {
   --background: #fbf9f4;

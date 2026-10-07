@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { DebtItem, DebtCategory } from '@/types/debt';
 import { DEBT_CATEGORY_LABELS } from '@/lib/presets';
 import { X } from 'lucide-react';
+import { ModalShell } from './ModalShell';
 
 interface AddEditDebtModalProps {
   isOpen: boolean;
@@ -39,9 +40,13 @@ const AddEditDebtForm: React.FC<AddEditDebtModalProps> = ({
     e.preventDefault();
     if (!name.trim() || !balance) return;
 
-    const numBalance = parseFloat(balance) || 0;
-    const numApr = parseFloat(apr) || 0;
-    const numMin = parseFloat(minPayment) || Math.max(25, numBalance * 0.02);
+    const numBalance = Number(balance);
+    const numApr = Number(apr);
+    const parsedMin = Number(minPayment);
+    if (!Number.isFinite(numBalance) || numBalance < 0 || numBalance > 1_000_000_000) return;
+    if (!Number.isFinite(numApr) || numApr < 0 || numApr > 100) return;
+    const numMin = Number.isFinite(parsedMin) && parsedMin >= 0 ? parsedMin : Math.max(25, numBalance * 0.02);
+    const due = parseInt(dueDate, 10);
 
     const payload: Omit<DebtItem, 'id'> = {
       name: name.trim(),
@@ -49,7 +54,7 @@ const AddEditDebtForm: React.FC<AddEditDebtModalProps> = ({
       balance: numBalance,
       apr: numApr,
       minPayment: numMin,
-      dueDate: parseInt(dueDate) || 15,
+      dueDate: Number.isFinite(due) ? Math.min(31, Math.max(1, due)) : 15,
       customPriority,
       notes: notes.trim(),
       color: DEBT_CATEGORY_LABELS[category]?.defaultColor || '#d97706',
@@ -60,12 +65,7 @@ const AddEditDebtForm: React.FC<AddEditDebtModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div className="fixed inset-0 bg-slate-900/30 backdrop-blur-xs" onClick={onClose} />
-
-      {/* Modal Dialog */}
-      <div className="relative w-full max-w-lg rounded-2xl bg-white border-2 border-amber-200 shadow-2xl p-6 z-10 max-h-[90vh] overflow-y-auto">
+    <ModalShell isOpen onClose={onClose} title={editingDebt ? 'Edit Liability' : 'Add New Liability'}>
         <div className="flex items-center justify-between pb-4 border-b border-amber-200">
           <div>
             <h3 className="text-lg font-black text-slate-900">
@@ -226,8 +226,7 @@ const AddEditDebtForm: React.FC<AddEditDebtModalProps> = ({
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </ModalShell>
   );
 };
 

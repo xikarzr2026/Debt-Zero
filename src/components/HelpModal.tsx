@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { X, Zap, Flame, ShieldAlert, Sparkles, BookOpen } from 'lucide-react';
+import { ModalShell } from './ModalShell';
 
 interface HelpModalProps {
   isOpen: boolean;
@@ -12,12 +13,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div className="fixed inset-0 bg-slate-900/30 backdrop-blur-xs" onClick={onClose} />
-
-      {/* Modal Dialog */}
-      <div className="relative w-full max-w-2xl rounded-2xl bg-white border-2 border-amber-200 shadow-2xl p-6 z-10 max-h-[90vh] overflow-y-auto">
+    <ModalShell isOpen={isOpen} onClose={onClose} title="How DebtZero Optimizes Payoffs" panelClassName="max-w-2xl">
         <div className="flex items-center justify-between pb-4 border-b border-amber-200">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center justify-center">
@@ -100,7 +96,6 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
             </button>
           </div>
         </div>
-      </div>
-    </div>
+    </ModalShell>
   );
 };

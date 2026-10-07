@@ -82,11 +82,26 @@ export default function HomePage() {
               Welcome back, {profile.name || 'Friend'}
             </h1>
             <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-2xl">
-              Your optimized <strong className="text-slate-800 capitalize font-bold">{strategy}</strong> plan is projected to eliminate all {debts.length} liabilities by{' '}
-              <strong className="text-emerald-700 font-bold">{activePlan.debtFreeDate}</strong>
-              {interestSaved > 0 && (
+              Your optimized <strong className="text-slate-800 capitalize font-bold">{strategy.replace('_', ' ')}</strong> plan{' '}
+              {activePlan.unpayable ? (
                 <>
-                  , saving <strong className="text-emerald-700 font-bold">{formatCurrency(interestSaved)}</strong> in unnecessary interest.
+                  does not pay these {debts.filter((d) => d.balance > 0).length} liabilities off within 50 years
+                  {activePlan.remainingBalance > 0 && (
+                    <>
+                      {' '}
+                      — about <strong className="text-rose-700 font-bold">{formatCurrency(activePlan.remainingBalance)}</strong> would still be owed.
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  is projected to eliminate all {debts.filter((d) => d.balance > 0).length} liabilities by{' '}
+                  <strong className="text-emerald-700 font-bold">{activePlan.debtFreeDate}</strong>
+                  {interestSaved > 0 && (
+                    <>
+                      , saving <strong className="text-emerald-700 font-bold">{formatCurrency(interestSaved)}</strong> in unnecessary interest.
+                    </>
+                  )}
                 </>
               )}
             </p>

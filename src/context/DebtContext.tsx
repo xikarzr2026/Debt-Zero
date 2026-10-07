@@ -19,6 +19,8 @@ import {
   formatCurrencyValue,
   generateMonthChecklist,
   normalizeToMonthlyIncome,
+  parseDebtBackup,
+  currencyDecimals,
 } from '@/lib/debtEngine';
 import { PRESET_SCENARIOS } from '@/lib/presets';
 
@@ -36,7 +38,7 @@ interface DebtContextType {
   strategy: OptimizationStrategy;
   windfall: WindfallSimulation;
   currentPresetId: string | null;
-  theme: 'dark' | 'light';
+  theme: 'light';
   isLoaded: boolean;
 
   // Derived calculations
@@ -63,14 +65,12 @@ interface DebtContextType {
   loadPreset: (presetId: string) => void;
   toggleChecklistItem: (debtId: string) => void;
   resetChecklist: () => void;
-  toggleTheme: () => void;
   exportDataJSON: () => string;
   importDataJSON: (jsonStr: string) => { success: boolean; error?: string };
   formatCurrency: (val: number, decimals?: number) => string;
 }
 
 const STORAGE_KEY = 'debtzero_userdata_v1';
-const THEME_KEY = 'debtzero_theme_v1';
 
 const DebtContext = createContext<DebtContextType | undefined>(undefined);
 
@@ -81,20 +81,19 @@ export function DebtProvider({ children }: { children: ReactNode }) {
   const [debts, setDebtsState] = useState<DebtItem[]>(defaultPreset.debts);
   const [strategy, setStrategy] = useState<OptimizationStrategy>('avalanche');
   const [windfall, setWindfall] = useState<WindfallSimulation>({
-    amount: 1500,
+    amount: 0,
     type: 'one_time',
     targetDebtId: 'auto_optimal',
   });
   const [currentPresetId, setCurrentPresetId] = useState<string | null>(defaultPreset.id);
-  const [theme, setTheme] = useState<'dark' | 'light'>('light');
+  const [theme] = useState<'light'>('light');
   const [checklistCompletedMap, setChecklistCompletedMap] = useState<Record<string, boolean>>({});
+  const [checklistPlanKey, setChecklistPlanKey] = useState('');
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Load from localStorage on mount
   useEffect(() => {
     try {
-      localStorage.setItem(THEME_KEY, 'light');
-
       const savedData = localStorage.getItem(STORAGE_KEY);
       if (savedData) {
         const parsed = JSON.parse(savedData);
@@ -131,23 +130,9 @@ export function DebtProvider({ children }: { children: ReactNode }) {
     }
   }, [profile, debts, strategy, windfall, currentPresetId, checklistCompletedMap, isLoaded]);
 
-  // Sync theme to document element class (clean light theme)
-  useEffect(() => {
-    if (typeof document !== 'undefined') {
-      const root = document.documentElement;
-      root.classList.remove('dark');
-      localStorage.setItem(THEME_KEY, 'light');
-    }
-  }, [theme]);
-
-  const toggleTheme = () => {
-    // Keep light theme active
-    setTheme('light');
-  };
-
   const currencyConfig = SUPPORTED_CURRENCIES[profile.currency as CurrencyCode] || SUPPORTED_CURRENCIES.USD;
 
-  const formatCurrency = (val: number, decimals: number = 0) => {
+  const formatCurrency = (val: number, decimals: number = currencyDecimals(profile.currency)) => {
     return formatCurrencyValue(val, currencyConfig.symbol, decimals);
   };
 
@@ -193,8 +178,10 @@ export function DebtProvider({ children }: { children: ReactNode }) {
       debts,
       monthlySurplus: effectiveSurplus,
       windfall: windfall.amount > 0 ? windfall : undefined,
+      decimals: currencyDecimals(profile.currency),
+      activeStrategy: strategy,
     });
-  }, [debts, effectiveSurplus, windfall]);
+  }, [debts, effectiveSurplus, windfall, profile.currency, strategy]);
 
   // Active plan for current strategy
   const activePlan = useMemo(() => {
@@ -217,17 +204,24 @@ export function DebtProvider({ children }: { children: ReactNode }) {
     return detectNegativeAmortization(debts);
   }, [debts]);
 
-  // Monthly execution checklist
+  // Monthly execution checklist. Checks reset when the month-1 payment mix changes.
+  const planKey = useMemo(() => {
+    const month = activePlan.schedule[0];
+    if (!month) return 'empty';
+    return month.payments.map((p) => `${p.debtId}:${p.totalPayment}`).join('|');
+  }, [activePlan]);
+
   const checklist = useMemo(() => {
     const rawItems = generateMonthChecklist(activePlan, debts);
+    const checks = planKey === checklistPlanKey ? checklistCompletedMap : {};
     return rawItems.map((item) => ({
       debtId: item.debtId,
       debtName: item.debtName,
       amount: item.totalPayment,
       dueDate: item.dueDate,
-      completed: !!checklistCompletedMap[item.debtId],
+      completed: !!checks[item.debtId],
     }));
-  }, [activePlan, debts, checklistCompletedMap]);
+  }, [activePlan, debts, checklistCompletedMap, planKey, checklistPlanKey]);
 
   // Handlers
   const setProfile = (newProfile: UserFinancialProfile) => {
@@ -266,7 +260,7 @@ export function DebtProvider({ children }: { children: ReactNode }) {
   };
 
   const addDebt = (debt: Omit<DebtItem, 'id'>) => {
-    const newId = `debt-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
+    const newId = `debt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
     setDebtsState((prev) => [...prev, { ...debt, id: newId }]);
     setCurrentPresetId(null);
   };
@@ -286,7 +280,7 @@ export function DebtProvider({ children }: { children: ReactNode }) {
     if (!existing) return;
     const duplicated: DebtItem = {
       ...existing,
-      id: `debt-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      id: `debt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       name: `${existing.name} (Copy)`,
     };
     setDebtsState((prev) => [...prev, duplicated]);
@@ -313,27 +307,36 @@ export function DebtProvider({ children }: { children: ReactNode }) {
   const loadPreset = (presetId: string) => {
     const found = PRESET_SCENARIOS.find((p) => p.id === presetId);
     if (!found) return;
+    const stamp = Date.now().toString(36);
     setProfileState(JSON.parse(JSON.stringify(found.profile)));
-    setDebtsState(JSON.parse(JSON.stringify(found.debts)));
+    setDebtsState(
+      found.debts.map((debt, index) => ({
+        ...debt,
+        id: `${found.id}-${index + 1}-${stamp}`,
+      }))
+    );
     setCurrentPresetId(found.id);
     setChecklistCompletedMap({});
+    setChecklistPlanKey('');
   };
 
   const toggleChecklistItem = (debtId: string) => {
-    setChecklistCompletedMap((prev) => ({
-      ...prev,
-      [debtId]: !prev[debtId],
-    }));
+    setChecklistPlanKey(planKey);
+    setChecklistCompletedMap((prev) => {
+      const base = checklistPlanKey === planKey ? prev : {};
+      return { ...base, [debtId]: !base[debtId] };
+    });
   };
 
   const resetChecklist = () => {
     setChecklistCompletedMap({});
+    setChecklistPlanKey(planKey);
   };
 
   const exportDataJSON = () => {
     const data = {
       exportedAt: new Date().toISOString(),
-      version: '1.0',
+      version: '1.1',
       profile,
       debts,
       strategy,
@@ -343,20 +346,18 @@ export function DebtProvider({ children }: { children: ReactNode }) {
   };
 
   const importDataJSON = (jsonStr: string) => {
-    try {
-      const data = JSON.parse(jsonStr);
-      if (!data.profile || !Array.isArray(data.debts)) {
-        return { success: false, error: 'Invalid DebtZero JSON format. Missing profile or debts.' };
-      }
-      setProfileState(data.profile);
-      setDebtsState(data.debts);
-      if (data.strategy) setStrategy(data.strategy);
-      if (data.windfall) setWindfall(data.windfall);
-      setCurrentPresetId(null);
-      return { success: true };
-    } catch (err) {
-      return { success: false, error: (err as Error).message || 'Failed to parse JSON file' };
+    const parsed = parseDebtBackup(jsonStr);
+    if (!parsed.success || !parsed.profile || !parsed.debts) {
+      return { success: false, error: parsed.error || 'Failed to parse JSON file' };
     }
+    setProfileState(parsed.profile);
+    setDebtsState(parsed.debts);
+    if (parsed.strategy) setStrategy(parsed.strategy);
+    if (parsed.windfall) setWindfall(parsed.windfall);
+    setCurrentPresetId(null);
+    setChecklistCompletedMap({});
+    setChecklistPlanKey('');
+    return { success: true };
   };
 
   return (
@@ -390,7 +391,6 @@ export function DebtProvider({ children }: { children: ReactNode }) {
         loadPreset,
         toggleChecklistItem,
         resetChecklist,
-        toggleTheme,
         exportDataJSON,
         importDataJSON,
         formatCurrency,

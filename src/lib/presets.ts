@@ -31,7 +31,6 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
         subscriptions: 120,
         other: 160,
       },
-      manualExtraMonthlySurplus: 450,
     },
     debts: [
       {
@@ -105,7 +104,6 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
         subscriptions: 90,
         other: 150,
       },
-      manualExtraMonthlySurplus: 350,
     },
     debts: [
       {
@@ -175,7 +173,6 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
         subscriptions: 140,
         other: 260,
       },
-      manualExtraMonthlySurplus: 600,
     },
     debts: [
       {
@@ -246,7 +243,6 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
         subscriptions: 50,
         other: 100,
       },
-      manualExtraMonthlySurplus: 300,
     },
     debts: [
       {

@@ -1,7 +1,7 @@
 # 🚀 DebtZero: Intelligent Debt Elimination & Payoff Engine
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-success?style=for-the-badge&logo=github)](https://xikarzr2026.github.io/Debt-Zero/)
-[![Version](https://img.shields.io/badge/Version-1.0.0-emerald?style=for-the-badge)](package.json)
+[![Version](https://img.shields.io/badge/Version-1.1.0-emerald?style=for-the-badge)](package.json)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-blue?style=for-the-badge&logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)

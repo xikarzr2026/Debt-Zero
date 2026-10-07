@@ -1,6 +1,6 @@
 # 🏛️ DebtZero Architecture & Mathematical Specification
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **License:** MIT  
 **Platform:** Next.js 16 (Turbopack, Static Export), React 19, TypeScript 5
 
@@ -24,7 +24,7 @@ DebtZero is a client-first, privacy-first web application designed to compute ac
 Monthly interest is calculated on the beginning-of-month principal balance:
 $$\text{Monthly Interest} = \text{Round}_2\left(\text{Balance} \times \frac{\text{APR}}{100 \times 12}\right)$$
 - If balance $\le 0$ or $\text{APR} \le 0$, interest is strictly $\$0.00$.
-- Cents are rounded to 2 decimal places using half-up banking conventions.
+- Cents are rounded half-up (ties away from zero) with decimal arithmetic, not `Number.toFixed`. JPY uses 0 decimal places.
 
 ### 2.2 Income Normalization
 Users can enter income in arbitrary pay frequencies, normalized to a standard monthly baseline:
@@ -108,7 +108,7 @@ Debt-Zero/
 │       └── debt.ts             # Domain TypeScript interfaces
 ├── test/
 │   └── math.test.ts            # Automated mathematical verification test suite
-├── package.json                # Dependencies, scripts (v1.0.0)
+├── package.json                # Dependencies, scripts (v1.1.0)
 └── README.md                   # User guide & repository documentation
 ```
 

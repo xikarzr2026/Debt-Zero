@@ -6,7 +6,6 @@ import { PRESET_SCENARIOS } from '@/lib/presets';
 import { SUPPORTED_CURRENCIES, CurrencyCode } from '@/types/debt';
 import {
   Zap,
-  Sun,
   Download,
   Sparkles,
   ChevronDown,
@@ -52,7 +51,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 Debt<span className="text-emerald-700">Zero</span>
               </span>
               <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
-                Prairie v1.0
+                Prairie v1.1
               </span>
             </div>
             <p className="text-xs text-slate-500 hidden sm:block">
@@ -202,14 +201,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <HelpCircle className="w-4 h-4 text-amber-700" />
           </button>
-
-          {/* Theme Indicator (Sun for Prairie Daylight) */}
-          <div
-            className="p-2 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 shadow-xs"
-            title="Prairie Daylight Theme Active"
-          >
-            <Sun className="w-4 h-4 text-amber-600 fill-amber-400" />
-          </div>
         </div>
       </div>
     </header>

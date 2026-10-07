@@ -130,6 +130,9 @@ export interface PayoffStrategyResult {
     minPayment: number;
     deficit: number;
   }>;
+  /** True when the schedule hit the month cap with a balance still owed. */
+  unpayable: boolean;
+  remainingBalance: number;
 }
 
 export interface EngineComparison {
@@ -151,14 +154,19 @@ export interface EngineComparison {
   // Avalanche vs Snowball delta
   avalancheVsSnowballInterestSaved: number;
   
-  // Windfall metrics
+  // Windfall metrics are relative to the user's selected strategy, not always avalanche.
   windfallImpact?: {
     interestSaved: number;
     monthsSaved: number;
+    /** Debt that actually received the month-1 extra (or the recurring target). */
+    appliedTargetDebtName: string;
+    appliedTargetDebtId: string;
+    /** Highest-APR suggestion. Only equals the applied target when auto-optimal avalanche is used. */
     recommendedTargetDebtName: string;
     recommendedTargetDebtId: string;
     newDebtFreeDate: string;
     originalDebtFreeDate: string;
+    comparedStrategy: OptimizationStrategy;
   };
 }
 

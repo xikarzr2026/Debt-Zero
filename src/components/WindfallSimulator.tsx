@@ -17,11 +17,26 @@ export const WindfallSimulator: React.FC = () => {
     resetWindfall,
     comparison,
     formatCurrency,
+    currencyConfig,
     debts,
     strategy,
   } = useDebt();
 
   const windfallImpact = comparison.windfallImpact;
+  const windfallPlan =
+    strategy === 'snowball'
+      ? comparison.windfallSnowball
+      : strategy === 'custom'
+        ? comparison.windfallAvalanche
+        : comparison.windfallAvalanche;
+  const baselinePlan =
+    strategy === 'snowball'
+      ? comparison.snowball
+      : strategy === 'custom'
+        ? comparison.custom
+        : strategy === 'minimums_only'
+          ? comparison.baselineMinimums
+          : comparison.avalanche;
 
   const triggerConfetti = () => {
     confetti({
@@ -46,16 +61,18 @@ export const WindfallSimulator: React.FC = () => {
     });
   };
 
-  const activePlanInterest = comparison.avalanche.totalInterestPaid;
-  const windfallInterest = comparison.windfallAvalanche?.totalInterestPaid ?? activePlanInterest;
-  const interestSaved = Math.max(0, activePlanInterest - windfallInterest);
+  const activePlanInterest = windfallImpact?.interestSaved != null && baselinePlan
+    ? (baselinePlan.totalInterestPaid)
+    : comparison.avalanche.totalInterestPaid;
+  const windfallInterest = windfallPlan?.totalInterestPaid ?? activePlanInterest;
+  const interestSaved = windfallImpact?.interestSaved ?? Math.max(0, activePlanInterest - windfallInterest);
 
-  const activeMonths = comparison.avalanche.totalMonths;
-  const windfallMonths = comparison.windfallAvalanche?.totalMonths ?? activeMonths;
-  const monthsSaved = Math.max(0, activeMonths - windfallMonths);
+  const activeMonths = baselinePlan?.totalMonths ?? comparison.avalanche.totalMonths;
+  const windfallMonths = windfallPlan?.totalMonths ?? activeMonths;
+  const monthsSaved = windfallImpact?.monthsSaved ?? Math.max(0, activeMonths - windfallMonths);
 
-  const newDate = comparison.windfallAvalanche?.debtFreeDate || comparison.avalanche.debtFreeDate;
-  const targetDebtName = windfallImpact?.recommendedTargetDebtName || 'Top APR Debt';
+  const newDate = windfallImpact?.newDebtFreeDate || windfallPlan?.debtFreeDate || comparison.avalanche.debtFreeDate;
+  const targetDebtName = windfallImpact?.appliedTargetDebtName || 'priority debt';
 
   return (
     <div className="glass-panel rounded-2xl p-5 sm:p-6 w-full bg-white/95 border-amber-200/90 shadow-xs relative overflow-hidden">
@@ -105,7 +122,7 @@ export const WindfallSimulator: React.FC = () => {
 
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-700 font-black text-lg">
-              $
+              {currencyConfig.symbol}
             </span>
             <input
               type="number"
@@ -178,7 +195,7 @@ export const WindfallSimulator: React.FC = () => {
               onChange={(e) => setWindfall({ ...windfall, targetDebtId: e.target.value })}
               className="w-full px-3 py-2 rounded-lg bg-white border border-amber-200 text-xs text-slate-800 font-semibold focus:outline-none focus:ring-1 focus:ring-emerald-500 shadow-2xs"
             >
-              <option value="auto_optimal">⚡ Auto-Optimal ({strategy} recommendation)</option>
+              <option value="auto_optimal">Auto ({strategy === 'snowball' ? 'smallest balance' : strategy === 'custom' ? 'your priority' : 'highest APR'})</option>
               {debts.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name} ({d.apr}% APR • {formatCurrency(d.balance)})

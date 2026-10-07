@@ -27,7 +27,7 @@ export const StrategySelector: React.FC = () => {
       badge: 'Mathematical Optimum',
       badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-300',
       icon: <Zap className="w-4 h-4 text-emerald-600" />,
-      description: 'Targets highest APR first. Minimizes total interest and finishes fastest mathematically.',
+      description: 'Targets highest APR first. Minimizes total interest paid.',
       totalInterest: comparison.avalanche.totalInterestPaid,
       debtFreeDate: comparison.avalanche.debtFreeDate,
       totalMonths: comparison.avalanche.totalMonths,
@@ -158,7 +158,9 @@ export const StrategySelector: React.FC = () => {
                   <div className="text-[10px] uppercase font-semibold text-slate-500">
                     Debt Free
                   </div>
-                  <div className="font-bold text-sm text-slate-900">{strat.debtFreeDate}</div>
+                  <div className={`font-bold text-sm ${strat.debtFreeDate === 'Does not pay off' ? 'text-rose-700' : 'text-slate-900'}`}>
+                    {strat.debtFreeDate}
+                  </div>
                 </div>
 
                 <div className="text-right">
