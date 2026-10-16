@@ -6,8 +6,8 @@ We provide security updates and patches for the following versions:
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.2.x (main branch) | :white_check_mark: |
-| < 1.2   | :x:                |
+| 1.3.x (main branch) | :white_check_mark: |
+| < 1.3   | :x:                |
 
 ---
 
@@ -39,4 +39,4 @@ Please **do not** report security vulnerabilities through public GitHub issues o
 - **Validated Input**: Imported backups and data read back from `localStorage` are size-limited, type-checked, and range-checked before use. CSV exports neutralise spreadsheet formulas.
 - **Content Security Policy**: Production builds ship a restrictive CSP meta tag (no third-party origins, no plugins, no form submission).
 - **Dependency Auditing**: GitHub CodeQL scans every push and pull request, and `npm audit` is reviewed when dependencies change. Dependabot version-update PRs are disabled.
-- **Local Data Removal**: **Backup & Restore → Clear All Data** removes everything the app stored in the browser.
+- **Local Data Removal**: **Settings → Clear all data** removes everything the app stored in the browser. Nothing is stored before the user finishes setup or loads a backup.

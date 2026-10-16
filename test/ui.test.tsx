@@ -5,15 +5,13 @@ import { DebtProvider, useDebt } from '@/context/DebtContext';
 import { CashFlowModal } from '@/components/CashFlowModal';
 import { MonthlyChecklist } from '@/components/MonthlyChecklist';
 import { DebtInventory } from '@/components/DebtInventory';
+import { STORAGE_KEY, seedPlan, stored } from './fixtures';
 
-const STORAGE_KEY = 'debtzero_userdata_v1';
-
-beforeEach(() => localStorage.clear());
+beforeEach(() => {
+  localStorage.clear();
+  seedPlan();
+});
 afterEach(cleanup);
-
-function stored() {
-  return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-}
 
 describe('CashFlowModal', () => {
   // Mirrors page.tsx: the parent consumes the context and passes a fresh inline onClose each render
@@ -118,25 +116,33 @@ describe('DebtInventory custom priority', () => {
 
 describe('stored data', () => {
   function Probe() {
-    const { debts, isLoaded } = useDebt();
-    return <div data-testid="probe">{isLoaded ? debts.map((d) => d.name).join('|') : 'loading'}</div>;
+    const { debts, isLoaded, onboardingComplete } = useDebt();
+    return (
+      <div data-testid="probe">
+        {isLoaded ? `${onboardingComplete ? 'plan' : 'setup'}:${debts.map((d) => d.name).join('|')}` : 'loading'}
+      </div>
+    );
   }
 
   it('ignores corrupt localStorage instead of crashing', () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ profile: { name: 'x' }, debts: 'nope', strategy: 42 }));
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ onboardingComplete: true, profile: { name: 'x' }, debts: 'nope', strategy: 42 })
+    );
     render(
       <DebtProvider>
         <Probe />
       </DebtProvider>
     );
-    expect(screen.getByTestId('probe').textContent).not.toBe('loading');
-    expect(screen.getByTestId('probe').textContent!.length).toBeGreaterThan(0);
+    expect(screen.getByTestId('probe').textContent).toBe('setup:');
+    expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
   });
 
   it('sanitizes bad debt rows in localStorage', () => {
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
+        onboardingComplete: true,
         profile: { name: 'x', currency: 'USD' },
         debts: [{}, { id: 'ok', name: 'Good', balance: '500', apr: 10, minPayment: 25 }],
       })
@@ -146,6 +152,26 @@ describe('stored data', () => {
         <Probe />
       </DebtProvider>
     );
-    expect(screen.getByTestId('probe').textContent).toBe('Good');
+    expect(screen.getByTestId('probe').textContent).toBe('plan:Good');
+  });
+
+  it('treats an untouched v1.2 demo preset as no plan', () => {
+    seedPlan({ onboardingComplete: undefined, currentPresetId: 'high_interest_cards' });
+    render(
+      <DebtProvider>
+        <Probe />
+      </DebtProvider>
+    );
+    expect(screen.getByTestId('probe').textContent).toBe('setup:');
+  });
+
+  it('keeps a v1.2 plan the user had edited', () => {
+    seedPlan({ onboardingComplete: undefined, currentPresetId: null });
+    render(
+      <DebtProvider>
+        <Probe />
+      </DebtProvider>
+    );
+    expect(screen.getByTestId('probe').textContent).toBe('plan:Travel Card|Cash Back Card|Store Card|Consolidation Loan');
   });
 });

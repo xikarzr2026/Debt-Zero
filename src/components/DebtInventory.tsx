@@ -177,7 +177,7 @@ export const DebtInventory: React.FC = () => {
           <Coins className="w-10 h-10 text-amber-600 mx-auto mb-3" />
           <h4 className="font-bold text-sm text-slate-800">No active liabilities found</h4>
           <p className="text-xs text-slate-600 mt-1 max-w-sm mx-auto">
-            You are currently debt-free, or you can add your active accounts or load a preset above to begin.
+            You are currently debt-free. Add a card or loan to plan its payoff.
           </p>
           <button
             onClick={handleOpenAdd}

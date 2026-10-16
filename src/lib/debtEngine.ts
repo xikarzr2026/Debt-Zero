@@ -831,7 +831,7 @@ function sanitizeProfile(raw: unknown): import('../types/debt.ts').UserFinancial
   const manualExtra =
     manual === undefined || manual === null ? undefined : Math.max(0, finiteNumber(manual, NaN));
   return {
-    name: String(row.name ?? 'Friend').trim().slice(0, 80) || 'Friend',
+    name: String(row.name ?? '').trim().slice(0, 80),
     currency: IMPORT_CURRENCIES.has(row.currency as CurrencyCode) ? (row.currency as CurrencyCode) : 'USD',
     payFrequency,
     incomePerPeriod,

@@ -9,6 +9,8 @@ interface ModalShellProps {
   children: React.ReactNode;
   labelledBy?: string;
   panelClassName?: string;
+  /** Skip the default padding and scrolling so the child can lay out its own header, body and footer. */
+  bare?: boolean;
 }
 
 export function ModalShell({
@@ -18,6 +20,7 @@ export function ModalShell({
   children,
   labelledBy,
   panelClassName = 'max-w-lg',
+  bare = false,
 }: ModalShellProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
@@ -80,7 +83,11 @@ export function ModalShell({
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelledBy || titleId}
-        className={`relative w-full ${panelClassName} rounded-2xl bg-white border-2 border-amber-200 shadow-2xl p-6 z-10 max-h-[92vh] overflow-y-auto`}
+        className={
+          bare
+            ? `relative w-full z-10 ${panelClassName}`
+            : `relative w-full ${panelClassName} rounded-2xl bg-white border-2 border-amber-200 shadow-2xl p-6 z-10 max-h-[92vh] overflow-y-auto`
+        }
       >
         <h2 id={titleId} className="sr-only">
           {title}

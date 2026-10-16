@@ -26,7 +26,7 @@ export const StrategySelector: React.FC = () => {
       name: 'Debt Avalanche',
       badge: 'Mathematical Optimum',
       badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-300',
-      icon: <Zap className="w-4 h-4 text-emerald-600" />,
+      icon: <Zap className="w-4 h-4" />,
       description: 'Targets highest APR first. Minimizes total interest paid.',
       totalInterest: comparison.avalanche.totalInterestPaid,
       debtFreeDate: comparison.avalanche.debtFreeDate,
@@ -38,7 +38,7 @@ export const StrategySelector: React.FC = () => {
       name: 'Debt Snowball',
       badge: 'Psychological Momentum',
       badgeColor: 'bg-amber-100 text-amber-800 border-amber-300',
-      icon: <Flame className="w-4 h-4 text-amber-600" />,
+      icon: <Flame className="w-4 h-4" />,
       description: 'Targets lowest balance first. Gives fast milestone wins to build unstoppable motivation.',
       totalInterest: comparison.snowball.totalInterestPaid,
       debtFreeDate: comparison.snowball.debtFreeDate,
@@ -49,7 +49,7 @@ export const StrategySelector: React.FC = () => {
       name: 'Custom Priority',
       badge: 'Manual Order',
       badgeColor: 'bg-sky-100 text-sky-800 border-sky-300',
-      icon: <Sliders className="w-4 h-4 text-sky-600" />,
+      icon: <Sliders className="w-4 h-4" />,
       description: 'Pay down according to your personalized account priority rankings.',
       totalInterest: comparison.custom?.totalInterestPaid || 0,
       debtFreeDate: comparison.custom?.debtFreeDate || '—',
@@ -60,7 +60,7 @@ export const StrategySelector: React.FC = () => {
       name: 'Minimums Only',
       badge: 'Costly Baseline',
       badgeColor: 'bg-rose-100 text-rose-800 border-rose-300',
-      icon: <AlertTriangle className="w-4 h-4 text-rose-600" />,
+      icon: <AlertTriangle className="w-4 h-4" />,
       description: 'No extra payments applied. The slowest and most expensive trajectory.',
       totalInterest: comparison.baselineMinimums.totalInterestPaid,
       debtFreeDate: comparison.baselineMinimums.debtFreeDate,
@@ -75,9 +75,6 @@ export const StrategySelector: React.FC = () => {
         <div>
           <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
             <span>Optimization Strategy</span>
-            <span className="text-xs font-normal text-slate-500">
-              (Choose payoff algorithm)
-            </span>
           </h2>
           <p className="text-xs text-slate-600">
             Compare how different allocation rules drastically alter your interest paid and debt-free date.

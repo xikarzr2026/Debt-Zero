@@ -81,7 +81,7 @@ export const MonthlyChecklist: React.FC = () => {
             <h3 className="text-base sm:text-lg font-bold text-slate-900">
               Month 1 Execution Checklist
             </h3>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 whitespace-nowrap">
               {currentMonthSnapshot.dateFormatted}
             </span>
           </div>
@@ -193,7 +193,7 @@ export const MonthlyChecklist: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-3 text-[11px] text-slate-500 font-medium mt-0.5">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate-500 font-medium mt-0.5 [&>span]:whitespace-nowrap">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3 h-3 text-slate-400" />
                       Due by {debt?.dueDate ? ordinal(debt.dueDate) : ordinal(15)}
@@ -215,8 +215,8 @@ export const MonthlyChecklist: React.FC = () => {
               </div>
 
               {/* Total Payment to Send */}
-              <div className="text-right">
-                <div className="text-[10px] text-slate-500 uppercase font-semibold">
+              <div className="text-right shrink-0">
+                <div className="text-[10px] text-slate-500 uppercase font-semibold whitespace-nowrap">
                   Send to Creditor
                 </div>
                 <div

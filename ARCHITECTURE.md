@@ -1,6 +1,6 @@
 # 🏛️ DebtZero Architecture & Mathematical Specification
 
-**Version:** 1.2.0  
+**Version:** 1.3.0  
 **License:** MIT  
 **Platform:** Next.js 16 (Turbopack, Static Export, React Compiler), React 19, TypeScript 5, Node.js >= 22.6
 
@@ -9,6 +9,15 @@
 ## 1. High-Level System Overview
 
 DebtZero is a client-first, privacy-first web application designed to compute accelerated debt payoff schedules, compare optimization algorithms, detect negative amortization traps, and track monthly execution.
+
+### First-Run Flow
+1. With no saved plan, the page shows a "No plan loaded yet" empty state and opens `SetupWizard` automatically. No sample or demo figures are ever rendered.
+2. Step 0 offers **guided setup** or **import a backup** (`.json`, max 1 MB, validated by `parseDebtBackup`).
+3. Guided setup has four validated steps: income (currency, pay frequency, take-home pay), monthly expenses (7 categories), debts (at least one), and the payoff plan (extra monthly payment = all free cash flow or a fixed amount; Avalanche, Snowball or the listed order). It calls `completeSetup()` in `DebtContext`.
+4. `onboardingComplete` gates the dashboard and persistence: `localStorage` is only written once it is true, and it is saved with the plan. **Clear all data** removes storage, resets it to false and reopens setup.
+5. Migration: data saved before v1.3 has no flag. It is kept only if the user had edited it (v1.2 set `currentPresetId` to `null` on any edit); an untouched demo preset is discarded.
+
+The header has a single **Settings** menu: guided setup, income & budget, load/save plan file, currency, help, and clear all data. The dashboard shows a plan headline, four KPI cards and four tabs (Payoff Plan, Debts, Windfall, Schedule).
 
 ### Architectural Tenets
 1. **Local-First & Zero-Knowledge**: No user data is sent over the network. All state resides in React Context and persists to the user's browser `localStorage` (`debtzero_userdata_v1`). Data read back from storage is validated with the same `parseDebtBackup` sanitiser used for imports.
@@ -110,17 +119,20 @@ Debt-Zero/
 │   ├── context/                # DebtContext state & local storage synchronization
 │   ├── lib/
 │   │   ├── debtEngine.ts       # Pure mathematical simulation engine + import sanitiser
-│   │   ├── presets.ts          # Pre-configured scenario profiles
+│   │   ├── categories.ts       # Debt category labels, colours and typical APRs
 │   │   ├── utils.ts            # Class names, ordinals, CSV cell escaping
 │   │   └── version.ts          # App version shown in the UI and backups
 │   └── types/
 │       └── debt.ts             # Domain TypeScript interfaces
 ├── test/
 │   ├── math.test.ts            # Engine test suite (node:test)
-│   └── ui.test.tsx             # Component tests (Vitest + Testing Library, jsdom)
+│   ├── ui.test.tsx             # Component tests (Vitest + Testing Library, jsdom)
+│   ├── onboarding.test.tsx     # Setup wizard, backup import, Clear All Data, migration
+│   ├── fixtures.ts             # Seeded sample plan for component tests
+│   └── setup.ts                # jsdom shims (ResizeObserver)
 ├── vitest.config.ts            # UI test configuration
 ├── .nvmrc                      # Node version used by CI
-├── package.json                # Dependencies, scripts (v1.2.0)
+├── package.json                # Dependencies, scripts (v1.3.0)
 └── README.md                   # User guide & repository documentation
 ```
 
@@ -144,7 +156,7 @@ The engine suite verifies:
 - Import hardening (duplicate IDs, flat expense totals, empty debt lists)
 - Savings comparability when a plan never pays off
 
-The UI suite verifies modal focus while typing, checklist persistence across reloads, custom-priority reordering, and recovery from corrupt saved data.
+The UI suites verify modal focus while typing, checklist persistence across reloads, custom-priority reordering, recovery from corrupt saved data, and the onboarding flow (first-run setup, step validation, building a plan, importing a backup, Clear All Data, and migration of v1.2 data).
 
 ## 8. Deployment
 

@@ -1,69 +1,75 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useDebt } from '@/context/DebtContext';
-import { PRESET_SCENARIOS } from '@/lib/presets';
-import { SUPPORTED_CURRENCIES, CurrencyCode } from '@/types/debt';
+import { SUPPORTED_CURRENCIES } from '@/types/debt';
 import { APP_VERSION } from '@/lib/version';
 import {
   Zap,
-  Download,
-  Sparkles,
   ChevronDown,
+  Settings2,
+  Wand2,
+  Wallet,
+  Upload,
+  Download,
   HelpCircle,
+  Trash2,
+  Check,
 } from 'lucide-react';
 
 interface NavbarProps {
-  onOpenImportExport: () => void;
+  planLoaded: boolean;
+  onStartSetup: () => void;
   onOpenCashFlow: () => void;
   onOpenHelp: () => void;
+  onSavePlan: () => void;
+  onLoadPlan: (file: File) => void;
+  onClearData: () => void;
 }
 
+const menuItemClass =
+  'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left text-xs font-semibold text-slate-700 hover:bg-amber-50 focus:bg-amber-50 focus:outline-none disabled:opacity-40 disabled:pointer-events-none';
+
 export const Navbar: React.FC<NavbarProps> = ({
-  onOpenImportExport,
+  planLoaded,
+  onStartSetup,
   onOpenCashFlow,
   onOpenHelp,
+  onSavePlan,
+  onLoadPlan,
+  onClearData,
 }) => {
-  const {
-    profile,
-    updateProfile,
-    freeCashFlowData,
-    formatCurrency,
-    loadPreset,
-    currentPresetId,
-  } = useDebt();
+  const { profile, updateProfile } = useDebt();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [presetDropdownOpen, setPresetDropdownOpen] = useState(false);
-  const [currencyDropdownOpen, setCurrencyDropdownOpen] = useState(false);
-
+  // Close on outside click or Escape
   useEffect(() => {
-    if (!presetDropdownOpen && !currencyDropdownOpen) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setPresetDropdownOpen(false);
-        setCurrencyDropdownOpen(false);
-      }
+    if (!menuOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) setMenuOpen(false);
     };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMenuOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
     document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [presetDropdownOpen, currencyDropdownOpen]);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [menuOpen]);
 
-  const handleLoadPreset = (presetId: string) => {
-    setPresetDropdownOpen(false);
-    // Presets replace the whole plan; only ask when the user has their own data loaded
-    if (
-      currentPresetId === null &&
-      !window.confirm('Load this demo profile? It replaces your current debts and budget. Export a backup first to keep them.')
-    ) {
-      return;
-    }
-    loadPreset(presetId);
+  const run = (action: () => void) => {
+    setMenuOpen(false);
+    action();
   };
 
   return (
     <header className="sticky top-0 z-40 w-full bg-white/95 border-b border-amber-200/80 backdrop-blur-md shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-        {/* Brand Logo */}
+        {/* Brand */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-700 via-emerald-600 to-amber-500 p-[1.5px] shadow-md shadow-emerald-700/15 flex items-center justify-center">
             <div className="w-full h-full bg-amber-50 rounded-[10px] flex items-center justify-center">
@@ -76,164 +82,137 @@ export const Navbar: React.FC<NavbarProps> = ({
                 Debt<span className="text-emerald-700">Zero</span>
               </span>
               <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
-                Prairie v{APP_VERSION}
+                v{APP_VERSION}
               </span>
             </div>
-            <p className="text-xs text-slate-500 hidden sm:block">
-              Intelligent Debt Elimination & Payoff Engine
-            </p>
+            <p className="text-xs text-slate-500 hidden sm:block">Debt payoff planner</p>
           </div>
         </div>
 
-        {/* Middle: Free Cash Flow Status Pill */}
-        <button
-          onClick={onOpenCashFlow}
-          className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border transition-all hover:scale-[1.02] bg-amber-50/90 border-amber-200/90 shadow-xs"
-          title="Click to manage Income & Expenses breakdown"
-        >
-          <span className="text-slate-600">Free Cash Flow:</span>
-          <span
-            className={`font-bold ${
-              freeCashFlowData.isDeficit
-                ? 'text-rose-700'
-                : 'text-emerald-700'
-            }`}
+        {/* Settings: setup, budget, plan files, currency, help and reset in one place */}
+        <div className="relative" ref={menuRef}>
+          <button
+            type="button"
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((open) => !open)}
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg border border-amber-200 bg-white hover:bg-amber-50 transition-colors text-slate-700 shadow-xs"
           >
-            {formatCurrency(freeCashFlowData.freeCashFlow)}/mo
-          </span>
-          <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-200/80 text-amber-900 font-semibold">
-            Edit
-          </span>
-        </button>
+            <Settings2 className="w-4 h-4 text-slate-500" />
+            <span>Settings</span>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+          </button>
 
-        {/* Right Actions */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Preset Scenarios Switcher */}
-          <div className="relative">
-            <button
-              type="button"
-              aria-haspopup="true"
-              aria-expanded={presetDropdownOpen}
-              aria-label="Load a demo profile"
-              onClick={() => {
-                setPresetDropdownOpen(!presetDropdownOpen);
-                setCurrencyDropdownOpen(false);
-              }}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-amber-200 bg-white hover:bg-amber-50 transition-colors text-slate-700 shadow-xs"
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json,application/json"
+            className="hidden"
+            data-testid="navbar-load-input"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = '';
+              if (file) onLoadPlan(file);
+            }}
+          />
+
+          {menuOpen && (
+            <div
+              role="menu"
+              aria-label="Settings"
+              className="absolute right-0 mt-2 w-64 p-1.5 bg-white rounded-xl border border-amber-200 shadow-xl z-50"
             >
-              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-              <span className="hidden sm:inline">Presets</span>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-            </button>
+              <button type="button" role="menuitem" className={menuItemClass} onClick={() => run(onStartSetup)}>
+                <Wand2 className="w-4 h-4 text-emerald-700" />
+                <span>{planLoaded ? 'Guided setup…' : 'Start setup…'}</span>
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className={menuItemClass}
+                disabled={!planLoaded}
+                onClick={() => run(onOpenCashFlow)}
+              >
+                <Wallet className="w-4 h-4 text-emerald-700" />
+                <span>Income & budget…</span>
+              </button>
 
-            {presetDropdownOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setPresetDropdownOpen(false)}
-                />
-                <div className="absolute right-0 mt-2 w-72 rounded-xl border border-amber-200 bg-white shadow-xl p-2 z-50">
-                  <div className="px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider text-amber-800">
-                    Load Demo Financial Profile
+              <div className="my-1.5 h-px bg-amber-100" role="separator" />
+
+              <button
+                type="button"
+                role="menuitem"
+                className={menuItemClass}
+                onClick={() => run(() => fileInputRef.current?.click())}
+              >
+                <Upload className="w-4 h-4 text-sky-600" />
+                <span>Load plan from file…</span>
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className={menuItemClass}
+                disabled={!planLoaded}
+                onClick={() => run(onSavePlan)}
+              >
+                <Download className="w-4 h-4 text-sky-600" />
+                <span>Save plan to file</span>
+              </button>
+
+              {planLoaded && (
+                <>
+                  <div className="my-1.5 h-px bg-amber-100" role="separator" />
+                  <div className="px-2.5 pt-1 pb-1.5" role="radiogroup" aria-label="Currency">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Currency</div>
+                    <div className="grid grid-cols-4 gap-1">
+                      {Object.values(SUPPORTED_CURRENCIES).map((c) => {
+                        const selected = profile.currency === c.code;
+                        return (
+                          <button
+                            key={c.code}
+                            type="button"
+                            role="radio"
+                            aria-checked={selected}
+                            title={c.label}
+                            onClick={() => updateProfile({ currency: c.code })}
+                            className={`px-1.5 py-1 rounded-md text-[11px] font-bold border ${
+                              selected
+                                ? 'bg-emerald-50 border-emerald-600 text-emerald-800'
+                                : 'bg-white border-amber-200 text-slate-600 hover:bg-amber-50'
+                            }`}
+                          >
+                            {c.code}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                  {PRESET_SCENARIOS.map((preset) => {
-                    const isSelected = currentPresetId === preset.id;
-                    return (
-                      <button
-                        key={preset.id}
-                        type="button"
-                        onClick={() => handleLoadPreset(preset.id)}
-                        className={`w-full text-left p-2 rounded-lg text-xs transition-colors flex flex-col gap-0.5 ${
-                          isSelected
-                            ? 'bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold'
-                            : 'hover:bg-amber-50 text-slate-700'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between font-semibold">
-                          <span>{preset.name}</span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
-                            {preset.badge}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-500 line-clamp-1">
-                          {preset.tagline}
-                        </p>
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </div>
+                </>
+              )}
 
-          {/* Currency Switcher */}
-          <div className="relative">
-            <button
-              type="button"
-              aria-haspopup="true"
-              aria-expanded={currencyDropdownOpen}
-              aria-label={`Currency: ${profile.currency}`}
-              onClick={() => {
-                setCurrencyDropdownOpen(!currencyDropdownOpen);
-                setPresetDropdownOpen(false);
-              }}
-              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-amber-200 bg-white hover:bg-amber-50 transition-colors text-slate-700 shadow-xs"
-            >
-              <span className="font-bold text-emerald-700">
-                {SUPPORTED_CURRENCIES[profile.currency as CurrencyCode]?.symbol || '$'}
-              </span>
-              <span className="hidden sm:inline">{profile.currency}</span>
-              <ChevronDown className="w-3 h-3 text-slate-400" />
-            </button>
+              <div className="my-1.5 h-px bg-amber-100" role="separator" />
 
-            {currencyDropdownOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setCurrencyDropdownOpen(false)}
-                />
-                <div className="absolute right-0 mt-2 w-40 rounded-xl border border-amber-200 bg-white shadow-xl p-1 z-50">
-                  {Object.values(SUPPORTED_CURRENCIES).map((curr) => (
-                    <button
-                      key={curr.code}
-                      onClick={() => {
-                        updateProfile({ currency: curr.code });
-                        setCurrencyDropdownOpen(false);
-                      }}
-                      className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between ${
-                        profile.currency === curr.code
-                          ? 'bg-emerald-50 text-emerald-800 font-bold'
-                          : 'hover:bg-amber-50 text-slate-700'
-                      }`}
-                    >
-                      <span>{curr.label}</span>
-                      <span className="text-amber-800 font-bold">{curr.symbol}</span>
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Data Backup / Import */}
-          <button
-            onClick={onOpenImportExport}
-            className="p-2 text-xs font-medium rounded-lg border border-amber-200 bg-white hover:bg-amber-50 transition-colors text-slate-700 shadow-xs"
-            title="Import / Export Data"
-            aria-label="Import or export data"
-          >
-            <Download className="w-4 h-4 text-emerald-700" />
-          </button>
-
-          {/* How It Works Guide */}
-          <button
-            onClick={onOpenHelp}
-            className="p-2 text-xs font-medium rounded-lg border border-amber-200 bg-white hover:bg-amber-50 transition-colors text-slate-700 shadow-xs"
-            title="Financial Engine Guide"
-            aria-label="How calculations work"
-          >
-            <HelpCircle className="w-4 h-4 text-amber-700" />
-          </button>
+              <button type="button" role="menuitem" className={menuItemClass} onClick={() => run(onOpenHelp)}>
+                <HelpCircle className="w-4 h-4 text-amber-700" />
+                <span>How calculations work</span>
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className={`${menuItemClass} text-rose-700 hover:bg-rose-50 focus:bg-rose-50`}
+                disabled={!planLoaded}
+                onClick={() => run(onClearData)}
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Clear all data</span>
+              </button>
+              {planLoaded && (
+                <p className="px-2.5 pt-1.5 pb-0.5 text-[10px] text-slate-400 flex items-center gap-1">
+                  <Check className="w-3 h-3 text-emerald-600" /> Saved automatically in this browser
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </header>

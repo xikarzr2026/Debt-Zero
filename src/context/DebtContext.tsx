@@ -22,7 +22,6 @@ import {
   parseDebtBackup,
   currencyDecimals,
 } from '@/lib/debtEngine';
-import { PRESET_SCENARIOS } from '@/lib/presets';
 import { APP_VERSION } from '@/lib/version';
 
 interface ChecklistItemState {
@@ -38,9 +37,10 @@ interface DebtContextType {
   debts: DebtItem[];
   strategy: OptimizationStrategy;
   windfall: WindfallSimulation;
-  currentPresetId: string | null;
   theme: 'light';
   isLoaded: boolean;
+  /** True once the user has built a plan with the setup wizard or loaded a backup file. */
+  onboardingComplete: boolean;
 
   // Derived calculations
   comparison: EngineComparison;
@@ -62,7 +62,7 @@ interface DebtContextType {
   setStrategy: (strategy: OptimizationStrategy) => void;
   setWindfall: (windfall: WindfallSimulation) => void;
   resetWindfall: () => void;
-  loadPreset: (presetId: string) => void;
+  completeSetup: (plan: { profile: UserFinancialProfile; debts: DebtItem[]; strategy: OptimizationStrategy }) => void;
   toggleChecklistItem: (debtId: string) => void;
   resetChecklist: () => void;
   exportDataJSON: () => string;
@@ -75,22 +75,37 @@ const STORAGE_KEY = 'debtzero_userdata_v1';
 
 const DebtContext = createContext<DebtContextType | undefined>(undefined);
 
+/** Empty plan used before setup and after Clear All Data. Never shown: the app renders an empty state instead. */
+export const BLANK_PROFILE: UserFinancialProfile = {
+  name: '',
+  currency: 'USD',
+  payFrequency: 'monthly',
+  incomePerPeriod: 0,
+  monthlyNetIncome: 0,
+  livingExpenses: 0,
+  expensesBreakdown: {
+    housing: 0,
+    utilities: 0,
+    groceries: 0,
+    transportation: 0,
+    insurance: 0,
+    subscriptions: 0,
+    other: 0,
+  },
+};
+
+const DEFAULT_WINDFALL: WindfallSimulation = { amount: 0, type: 'one_time', targetDebtId: 'auto_optimal' };
+
 function nextPriority(debts: DebtItem[]): number {
   return debts.reduce((max, d) => Math.max(max, d.customPriority || 0), 0) + 1;
 }
 
 export function DebtProvider({ children }: { children: ReactNode }) {
-  const defaultPreset = PRESET_SCENARIOS[0]; // High-APR Card Overwhelm default
-
-  const [profile, setProfileState] = useState<UserFinancialProfile>(defaultPreset.profile);
-  const [debts, setDebtsState] = useState<DebtItem[]>(defaultPreset.debts);
+  const [profile, setProfileState] = useState<UserFinancialProfile>(BLANK_PROFILE);
+  const [debts, setDebtsState] = useState<DebtItem[]>([]);
   const [strategy, setStrategy] = useState<OptimizationStrategy>('avalanche');
-  const [windfall, setWindfall] = useState<WindfallSimulation>({
-    amount: 0,
-    type: 'one_time',
-    targetDebtId: 'auto_optimal',
-  });
-  const [currentPresetId, setCurrentPresetId] = useState<string | null>(defaultPreset.id);
+  const [windfall, setWindfall] = useState<WindfallSimulation>(DEFAULT_WINDFALL);
+  const [onboardingComplete, setOnboardingComplete] = useState(false);
   const [theme] = useState<'light'>('light');
   const [checklistCompletedMap, setChecklistCompletedMap] = useState<Record<string, boolean>>({});
   const [checklistPlanKey, setChecklistPlanKey] = useState('');
@@ -103,16 +118,21 @@ export function DebtProvider({ children }: { children: ReactNode }) {
       if (savedData) {
         // Stored data gets the same validation as an imported backup
         const restored = parseDebtBackup(savedData, { allowEmptyDebts: true });
-        if (restored.success && restored.profile && restored.debts) {
-          const parsed = JSON.parse(savedData);
+        const parsed = restored.success ? JSON.parse(savedData) : null;
+        // Data saved before v1.3 has no onboarding flag. It counts as the user's own plan only if they
+        // had edited it (v1.2 cleared currentPresetId on any edit); an untouched demo preset does not.
+        const isUserPlan =
+          parsed?.onboardingComplete === true ||
+          (parsed?.onboardingComplete === undefined &&
+            parsed?.currentPresetId === null &&
+            (restored.debts?.length ?? 0) > 0);
+        if (restored.success && restored.profile && restored.debts && isUserPlan) {
           // eslint-disable-next-line react-hooks/set-state-in-effect
           setProfileState(restored.profile);
           setDebtsState(restored.debts);
           if (restored.strategy) setStrategy(restored.strategy);
           if (restored.windfall) setWindfall(restored.windfall);
-          if (typeof parsed.currentPresetId === 'string' || parsed.currentPresetId === null) {
-            setCurrentPresetId(parsed.currentPresetId);
-          }
+          setOnboardingComplete(true);
           if (parsed.checklistCompletedMap && typeof parsed.checklistCompletedMap === 'object') {
             const checks: Record<string, boolean> = {};
             for (const [id, done] of Object.entries(parsed.checklistCompletedMap)) {
@@ -122,7 +142,8 @@ export function DebtProvider({ children }: { children: ReactNode }) {
           }
           if (typeof parsed.checklistPlanKey === 'string') setChecklistPlanKey(parsed.checklistPlanKey);
         } else {
-          console.error('Ignoring unreadable DebtZero data:', restored.error);
+          if (!restored.success) console.error('Ignoring unreadable DebtZero data:', restored.error);
+          localStorage.removeItem(STORAGE_KEY);
         }
       }
     } catch (e) {
@@ -132,16 +153,17 @@ export function DebtProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Save to localStorage on change
+  // Save to localStorage on change. Nothing is stored until the user has a plan of their own.
   useEffect(() => {
-    if (!isLoaded) return;
+    if (!isLoaded || !onboardingComplete) return;
     try {
       const dataToSave = {
+        version: APP_VERSION,
+        onboardingComplete: true,
         profile,
         debts,
         strategy,
         windfall,
-        currentPresetId,
         checklistCompletedMap,
         checklistPlanKey,
       };
@@ -149,7 +171,7 @@ export function DebtProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       console.error('Failed to save DebtZero data to localStorage:', e);
     }
-  }, [profile, debts, strategy, windfall, currentPresetId, checklistCompletedMap, checklistPlanKey, isLoaded]);
+  }, [profile, debts, strategy, windfall, checklistCompletedMap, checklistPlanKey, isLoaded, onboardingComplete]);
 
   const currencyConfig = SUPPORTED_CURRENCIES[profile.currency as CurrencyCode] || SUPPORTED_CURRENCIES.USD;
 
@@ -247,7 +269,6 @@ export function DebtProvider({ children }: { children: ReactNode }) {
   // Handlers
   const setProfile = (newProfile: UserFinancialProfile) => {
     setProfileState(newProfile);
-    setCurrentPresetId(null);
   };
 
   const updateProfile = (partial: Partial<UserFinancialProfile>) => {
@@ -261,7 +282,6 @@ export function DebtProvider({ children }: { children: ReactNode }) {
       }
       return updated;
     });
-    setCurrentPresetId(null);
   };
 
   const updateExpensesBreakdown = (
@@ -277,23 +297,19 @@ export function DebtProvider({ children }: { children: ReactNode }) {
         livingExpenses: sumTotal,
       };
     });
-    setCurrentPresetId(null);
   };
 
   const addDebt = (debt: Omit<DebtItem, 'id'>) => {
     const newId = `debt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
     setDebtsState((prev) => [...prev, { ...debt, id: newId, customPriority: nextPriority(prev) }]);
-    setCurrentPresetId(null);
   };
 
   const updateDebt = (id: string, updates: Partial<DebtItem>) => {
     setDebtsState((prev) => prev.map((d) => (d.id === id ? { ...d, ...updates } : d)));
-    setCurrentPresetId(null);
   };
 
   const deleteDebt = (id: string) => {
     setDebtsState((prev) => prev.filter((d) => d.id !== id));
-    setCurrentPresetId(null);
   };
 
   const duplicateDebt = (id: string) => {
@@ -305,31 +321,23 @@ export function DebtProvider({ children }: { children: ReactNode }) {
       name: `${existing.name} (Copy)`,
     };
     setDebtsState((prev) => [...prev, { ...duplicated, customPriority: nextPriority(prev) }]);
-    setCurrentPresetId(null);
   };
 
-  const resetWindfall = () => {
-    setWindfall({
-      amount: 0,
-      type: 'one_time',
-      targetDebtId: 'auto_optimal',
+  const resetWindfall = () => setWindfall(DEFAULT_WINDFALL);
+
+  // Replaces the whole plan with the one built in the setup wizard
+  const completeSetup = (plan: { profile: UserFinancialProfile; debts: DebtItem[]; strategy: OptimizationStrategy }) => {
+    setProfileState({
+      ...plan.profile,
+      monthlyNetIncome: normalizeToMonthlyIncome(plan.profile.incomePerPeriod, plan.profile.payFrequency),
+      livingExpenses: Object.values(plan.profile.expensesBreakdown).reduce((s, v) => s + (v || 0), 0),
     });
-  };
-
-  const loadPreset = (presetId: string) => {
-    const found = PRESET_SCENARIOS.find((p) => p.id === presetId);
-    if (!found) return;
-    const stamp = Date.now().toString(36);
-    setProfileState(JSON.parse(JSON.stringify(found.profile)));
-    setDebtsState(
-      found.debts.map((debt, index) => ({
-        ...debt,
-        id: `${found.id}-${index + 1}-${stamp}`,
-      }))
-    );
-    setCurrentPresetId(found.id);
+    setDebtsState(plan.debts);
+    setStrategy(plan.strategy);
+    setWindfall(DEFAULT_WINDFALL);
     setChecklistCompletedMap({});
     setChecklistPlanKey('');
+    setOnboardingComplete(true);
   };
 
   const toggleChecklistItem = (debtId: string) => {
@@ -365,43 +373,27 @@ export function DebtProvider({ children }: { children: ReactNode }) {
     setProfileState(parsed.profile);
     setDebtsState(parsed.debts);
     if (parsed.strategy) setStrategy(parsed.strategy);
-    if (parsed.windfall) setWindfall(parsed.windfall);
-    setCurrentPresetId(null);
+    setWindfall(parsed.windfall ?? DEFAULT_WINDFALL);
     setChecklistCompletedMap({});
     setChecklistPlanKey('');
+    setOnboardingComplete(true);
     return { success: true };
   };
 
-  // Wipes stored data and starts over with an empty plan (not a demo preset)
+  // Wipes stored data and returns to first-run setup
   const clearAllData = () => {
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch (e) {
       console.error('Failed to clear DebtZero data:', e);
     }
-    setProfileState({
-      ...JSON.parse(JSON.stringify(defaultPreset.profile)),
-      name: 'Friend',
-      incomePerPeriod: 0,
-      monthlyNetIncome: 0,
-      livingExpenses: 0,
-      expensesBreakdown: {
-        housing: 0,
-        utilities: 0,
-        groceries: 0,
-        transportation: 0,
-        insurance: 0,
-        subscriptions: 0,
-        other: 0,
-      },
-      manualExtraMonthlySurplus: undefined,
-    });
+    setProfileState(BLANK_PROFILE);
     setDebtsState([]);
     setStrategy('avalanche');
-    resetWindfall();
-    setCurrentPresetId(null);
+    setWindfall(DEFAULT_WINDFALL);
     setChecklistCompletedMap({});
     setChecklistPlanKey('');
+    setOnboardingComplete(false);
   };
 
   return (
@@ -411,9 +403,9 @@ export function DebtProvider({ children }: { children: ReactNode }) {
         debts,
         strategy,
         windfall,
-        currentPresetId,
         theme,
         isLoaded,
+        onboardingComplete,
         comparison,
         activePlan,
         freeCashFlowData,
@@ -431,7 +423,7 @@ export function DebtProvider({ children }: { children: ReactNode }) {
         setStrategy,
         setWindfall,
         resetWindfall,
-        loadPreset,
+        completeSetup,
         toggleChecklistItem,
         resetChecklist,
         exportDataJSON,

@@ -1,7 +1,7 @@
 # 🚀 DebtZero: Intelligent Debt Elimination & Payoff Engine
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-success?style=for-the-badge&logo=github)](https://xikarzr2026.github.io/Debt-Zero/)
-[![Version](https://img.shields.io/badge/Version-1.2.0-emerald?style=for-the-badge)](package.json)
+[![Version](https://img.shields.io/badge/Version-1.3.0-emerald?style=for-the-badge)](package.json)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-blue?style=for-the-badge&logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
@@ -14,6 +14,13 @@
 ---
 
 ## 📸 Key Features
+
+### 0. 🧭 Guided Setup or Load a Backup
+- On first visit DebtZero opens a setup screen instead of a dashboard full of sample numbers. Nothing is shown until you have a plan of your own.
+- **Guided setup** (about 3 minutes, 4 steps): income and pay frequency, monthly expenses, your debts (with an instant warning when a minimum payment doesn't cover the interest), then how much extra to pay and which strategy to use.
+- **Import a backup**: drop or choose a `.json` file saved earlier with **Settings → Save plan to file**.
+- Close the setup screen and you get a short "No plan loaded yet" page with a single **Start Setup / Load Plan** button.
+- Re-run guided setup at any time from **Settings → Guided setup…**; it starts from your current plan.
 
 ### 1. ⚡ Multi-Strategy Optimization Algorithms
 - **Debt Avalanche (Mathematical Optimum)**: Prioritizes debts with the highest Annual Percentage Rate (APR). Minimizes total interest paid and saves the most money overall.
@@ -65,8 +72,9 @@
 - **Zero Remote Servers or Databases**: DebtZero does not operate any backend database, cloud sync, or external tracking servers. None of your debts, balances, interest rates, income, or personal numbers are ever transmitted over the network.
 - **Client-Side `localStorage` Only**: All financial records, custom payoff settings, and checklists are saved exclusively in your browser's private `localStorage` sandbox (`debtzero_userdata_v1`).
 - **No Accounts or Bank Linking**: You never have to sign up, enter an email, connect a bank account, or provide personal credentials.
-- **Full Portability & Backups**: You can export an offline `.json` file of your complete financial plan at any time and import it on any other machine or browser via the **Backup & Restore** button in the header.
-- **Data Removal**: Use **Backup & Restore → Clear All Data**, clear your browser's site data, or close a private/incognito window to wipe everything stored on your device.
+- **Nothing Stored Until You Have a Plan**: The app saves only after you finish guided setup or load a backup. Before that, nothing is written to your browser.
+- **Full Portability & Backups**: **Settings → Save plan to file** downloads your complete plan as `.json`; **Settings → Load plan from file…** (or the setup screen) restores it on any machine or browser.
+- **Data Removal**: **Settings → Clear all data**, clearing your browser's site data, or closing a private/incognito window wipes everything stored on your device and returns DebtZero to the setup screen.
 - **Validated Restores**: Imported backups and data read back from `localStorage` go through the same validation, so a corrupted or hand-edited file cannot crash the app.
 
 ---
@@ -136,6 +144,7 @@ npm run lint         # eslint
 - **Windfall Acceleration**: Verifies interest and months saved under one-time and recurring lump-sum simulations, explicit targets, and minimums-only plans.
 - **Import & Storage Hardening**: Duplicate IDs, non-finite numbers, flat expense totals, and corrupt saved data.
 - **UI Behaviour**: Modal focus while typing, checklist persistence across reloads, custom-priority reordering.
+- **Onboarding**: First-run setup screen, step-by-step validation, building a plan, importing a backup, Clear All Data, and migration of data saved by earlier versions.
 
 ---
 

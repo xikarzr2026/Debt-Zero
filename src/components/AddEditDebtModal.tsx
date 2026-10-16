@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { DebtItem, DebtCategory } from '@/types/debt';
-import { DEBT_CATEGORY_LABELS } from '@/lib/presets';
+import { DEBT_CATEGORY_LABELS } from '@/lib/categories';
 import { X } from 'lucide-react';
 import { ModalShell } from './ModalShell';
 import { useDebt } from '@/context/DebtContext';
