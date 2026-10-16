@@ -119,13 +119,9 @@ export function DebtProvider({ children }: { children: ReactNode }) {
         // Stored data gets the same validation as an imported backup
         const restored = parseDebtBackup(savedData, { allowEmptyDebts: true });
         const parsed = restored.success ? JSON.parse(savedData) : null;
-        // Data saved before v1.3 has no onboarding flag. It counts as the user's own plan only if they
-        // had edited it (v1.2 cleared currentPresetId on any edit); an untouched demo preset does not.
-        const isUserPlan =
-          parsed?.onboardingComplete === true ||
-          (parsed?.onboardingComplete === undefined &&
-            parsed?.currentPresetId === null &&
-            (restored.debts?.length ?? 0) > 0);
+        // Only plans built in setup or loaded from a backup carry this flag. Anything older started
+        // from demo data, so it is discarded and the visitor gets first-run setup.
+        const isUserPlan = parsed?.onboardingComplete === true;
         if (restored.success && restored.profile && restored.debts && isUserPlan) {
           // eslint-disable-next-line react-hooks/set-state-in-effect
           setProfileState(restored.profile);

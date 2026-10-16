@@ -15,7 +15,7 @@ DebtZero is a client-first, privacy-first web application designed to compute ac
 2. Step 0 offers **guided setup** or **import a backup** (`.json`, max 1 MB, validated by `parseDebtBackup`).
 3. Guided setup has four validated steps: income (currency, pay frequency, take-home pay), monthly expenses (7 categories), debts (at least one), and the payoff plan (extra monthly payment = all free cash flow or a fixed amount; Avalanche, Snowball or the listed order). It calls `completeSetup()` in `DebtContext`.
 4. `onboardingComplete` gates the dashboard and persistence: `localStorage` is only written once it is true, and it is saved with the plan. **Clear all data** removes storage, resets it to false and reopens setup.
-5. Migration: data saved before v1.3 has no flag. It is kept only if the user had edited it (v1.2 set `currentPresetId` to `null` on any edit); an untouched demo preset is discarded.
+5. Migration: data saved before v1.3 has no flag. Earlier versions always started from demo data, so it is discarded and the visitor gets first-run setup.
 
 The header has a single **Settings** menu: guided setup, income & budget, load/save plan file, currency, help, and clear all data. The dashboard shows a plan headline, four KPI cards and four tabs (Payoff Plan, Debts, Windfall, Schedule).
 

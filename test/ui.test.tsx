@@ -155,23 +155,17 @@ describe('stored data', () => {
     expect(screen.getByTestId('probe').textContent).toBe('plan:Good');
   });
 
-  it('treats an untouched v1.2 demo preset as no plan', () => {
-    seedPlan({ onboardingComplete: undefined, currentPresetId: 'high_interest_cards' });
+  it.each([
+    ['an untouched demo plan', { onboardingComplete: undefined, currentPresetId: 'high_interest_cards' }],
+    ['an edited demo plan', { onboardingComplete: undefined, currentPresetId: null }],
+  ])('discards data saved before v1.3 (%s) and starts setup', (_label, overrides) => {
+    seedPlan(overrides);
     render(
       <DebtProvider>
         <Probe />
       </DebtProvider>
     );
     expect(screen.getByTestId('probe').textContent).toBe('setup:');
-  });
-
-  it('keeps a v1.2 plan the user had edited', () => {
-    seedPlan({ onboardingComplete: undefined, currentPresetId: null });
-    render(
-      <DebtProvider>
-        <Probe />
-      </DebtProvider>
-    );
-    expect(screen.getByTestId('probe').textContent).toBe('plan:Travel Card|Cash Back Card|Store Card|Consolidation Loan');
+    expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
   });
 });

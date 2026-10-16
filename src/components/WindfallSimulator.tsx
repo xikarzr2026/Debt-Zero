@@ -102,11 +102,11 @@ export const WindfallSimulator: React.FC = () => {
 
       {/* Inputs Section */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-5 mb-5">
-        {/* Cash Amount Input & Preset Chips */}
+        {/* Cash Amount Input & Quick-Add Chips */}
         <div className="md:col-span-7 space-y-3">
           <label htmlFor="windfall-amount" className="text-xs font-bold text-slate-800 flex items-center justify-between">
             <span>Extra Available Cash</span>
-            <span className="text-slate-500 font-normal">Enter an amount or tap presets</span>
+            <span className="text-slate-500 font-normal">Enter an amount or tap a quick-add</span>
           </label>
 
           <div className="relative">
@@ -125,17 +125,17 @@ export const WindfallSimulator: React.FC = () => {
             />
           </div>
 
-          {/* Quick preset buttons */}
+          {/* Quick-add buttons */}
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <span className="text-[11px] text-slate-500 font-semibold">Quick add:</span>
-            {quickAmounts.map((preset) => (
+            {quickAmounts.map((quick) => (
               <button
-                key={preset}
+                key={quick}
                 type="button"
-                onClick={() => handleQuickAdd(preset)}
+                onClick={() => handleQuickAdd(quick)}
                 className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-300 transition-all active:scale-95 shadow-2xs"
               >
-                +{formatCurrency(preset, 0)}
+                +{formatCurrency(quick, 0)}
               </button>
             ))}
           </div>
