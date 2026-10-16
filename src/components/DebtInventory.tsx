@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useDebt } from '@/context/DebtContext';
 import { DebtItem, DebtCategory } from '@/types/debt';
 import { ordinal } from '@/lib/utils';
+import { sortDebtsByStrategy } from '@/lib/debtEngine';
 import { AddEditDebtModal } from './AddEditDebtModal';
 import {
   Plus,
@@ -55,28 +56,39 @@ export const DebtInventory: React.FC = () => {
     }
   };
 
+  // In custom mode, rows are shown in the same order the engine pays them
+  const rows = strategy === 'custom' ? sortDebtsByStrategy(debts, 'custom') : debts;
+
   const movePriority = (index: number, direction: 'up' | 'down') => {
     if (
       (direction === 'up' && index === 0) ||
-      (direction === 'down' && index === debts.length - 1)
+      (direction === 'down' && index === rows.length - 1)
     ) {
       return;
     }
 
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    const updated = [...debts];
+    const updated = [...rows];
     const temp = updated[index];
     updated[index] = updated[targetIndex];
     updated[targetIndex] = temp;
 
     // Re-assign customPriority indices
     updated.forEach((d, i) => {
-      updateDebt(d.id, { customPriority: i + 1 });
+      if (d.customPriority !== i + 1) updateDebt(d.id, { customPriority: i + 1 });
     });
   };
 
+  const handleDelete = (debt: DebtItem) => {
+    if (window.confirm(`Delete "${debt.name}"? This cannot be undone unless you exported a backup.`)) {
+      deleteDebt(debt.id);
+    }
+  };
+
   const totalBalance = debts.reduce((s, d) => s + (Number(d.balance) || 0), 0);
-  const totalMin = debts.reduce((s, d) => s + (Number(d.minPayment) || 0), 0);
+  const totalMin = debts
+    .filter((d) => (Number(d.balance) || 0) > 0)
+    .reduce((s, d) => s + (Number(d.minPayment) || 0), 0);
 
   const getCategoryIcon = (category: DebtCategory) => {
     switch (category) {
@@ -190,7 +202,7 @@ export const DebtInventory: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-amber-100 text-xs bg-white">
-              {debts.map((debt, index) => {
+              {rows.map((debt, index) => {
                 const isHighApr = debt.apr >= 20;
                 const isMidApr = debt.apr >= 12 && debt.apr < 20;
 
@@ -259,15 +271,17 @@ export const DebtInventory: React.FC = () => {
                             disabled={index === 0}
                             className="p-1 rounded hover:bg-amber-100 text-slate-600 disabled:opacity-30"
                             title="Move Up Priority"
+                            aria-label={`Move ${debt.name} up in priority`}
                           >
                             <ArrowUp className="w-3.5 h-3.5" />
                           </button>
                           <span className="font-bold text-xs px-1.5 text-slate-800">{index + 1}</span>
                           <button
                             onClick={() => movePriority(index, 'down')}
-                            disabled={index === debts.length - 1}
+                            disabled={index === rows.length - 1}
                             className="p-1 rounded hover:bg-amber-100 text-slate-600 disabled:opacity-30"
                             title="Move Down Priority"
+                            aria-label={`Move ${debt.name} down in priority`}
                           >
                             <ArrowDown className="w-3.5 h-3.5" />
                           </button>
@@ -282,6 +296,7 @@ export const DebtInventory: React.FC = () => {
                           onClick={() => handleOpenEdit(debt)}
                           className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-amber-100 transition-colors"
                           title="Edit Details"
+                          aria-label={`Edit ${debt.name}`}
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
@@ -289,13 +304,15 @@ export const DebtInventory: React.FC = () => {
                           onClick={() => duplicateDebt(debt.id)}
                           className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-amber-100 transition-colors"
                           title="Duplicate Account"
+                          aria-label={`Duplicate ${debt.name}`}
                         >
                           <Copy className="w-3.5 h-3.5" />
                         </button>
                         <button
-                          onClick={() => deleteDebt(debt.id)}
+                          onClick={() => handleDelete(debt)}
                           className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                           title="Delete Account"
+                          aria-label={`Delete ${debt.name}`}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

@@ -11,6 +11,7 @@ import {
   Check,
   ShieldCheck,
   AlertCircle,
+  Trash2,
 } from 'lucide-react';
 
 interface ImportExportModalProps {
@@ -19,7 +20,7 @@ interface ImportExportModalProps {
 }
 
 export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, onClose }) => {
-  const { exportDataJSON, importDataJSON } = useDebt();
+  const { exportDataJSON, importDataJSON, clearAllData } = useDebt();
 
   const [activeTab, setActiveTab] = useState<'export' | 'import'>('export');
   const [copied, setCopied] = useState(false);
@@ -52,6 +53,14 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
+  const handleClearAll = () => {
+    if (!window.confirm('Delete all DebtZero data stored in this browser? This cannot be undone unless you exported first.')) {
+      return;
+    }
+    clearAllData();
+    onClose();
+  };
+
   const handleImport = () => {
     if (!importText.trim()) return;
     if (!window.confirm('Replace the current plan with this backup? This cannot be undone unless you exported first.')) {
@@ -81,7 +90,9 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
             </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Close"
             className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-amber-100 transition-colors"
           >
             <X className="w-5 h-5" />
@@ -123,6 +134,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
         {activeTab === 'export' ? (
           <div className="space-y-3">
             <textarea
+              aria-label="Exported backup JSON"
               readOnly
               value={jsonString}
               rows={8}
@@ -146,10 +158,23 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, on
                 <span>Download .JSON File</span>
               </button>
             </div>
+
+            <div className="flex items-center justify-between gap-3 pt-3 mt-1 border-t border-amber-200 text-xs">
+              <span className="text-slate-600">Using a shared computer? Remove everything this app stored here.</span>
+              <button
+                type="button"
+                onClick={handleClearAll}
+                className="px-3.5 py-2 rounded-xl border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold transition-colors flex items-center gap-1.5 shrink-0"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Clear All Data</span>
+              </button>
+            </div>
           </div>
         ) : (
           <div className="space-y-3">
             <textarea
+              aria-label="Backup JSON to import"
               value={importText}
               onChange={(e) => setImportText(e.target.value)}
               placeholder="Paste exported DebtZero JSON backup here..."

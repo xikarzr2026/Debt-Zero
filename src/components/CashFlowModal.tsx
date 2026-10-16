@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useDebt } from '@/context/DebtContext';
-import { PayFrequency } from '@/types/debt';
+import { PayFrequency, ExpensesBreakdown } from '@/types/debt';
 import { ModalShell } from './ModalShell';
 import {
   X,
@@ -14,7 +14,23 @@ import {
   Shield,
   Tv,
   Coins,
+  Package,
 } from 'lucide-react';
+
+const EXPENSE_FIELDS: Array<{
+  key: keyof ExpensesBreakdown;
+  label: string;
+  Icon: React.ComponentType<{ className?: string }>;
+  iconClass: string;
+}> = [
+  { key: 'housing', label: 'Housing (Rent / Base Mortgage)', Icon: Home, iconClass: 'text-amber-600' },
+  { key: 'utilities', label: 'Utilities (Electric, Water, Wifi)', Icon: Zap, iconClass: 'text-amber-600' },
+  { key: 'groceries', label: 'Groceries & Food Supplies', Icon: ShoppingBag, iconClass: 'text-emerald-600' },
+  { key: 'transportation', label: 'Transit & Gas (Excluding car loan)', Icon: Car, iconClass: 'text-sky-600' },
+  { key: 'insurance', label: 'Insurance (Health, Auto, Home)', Icon: Shield, iconClass: 'text-purple-600' },
+  { key: 'subscriptions', label: 'Subscriptions & Phone Plan', Icon: Tv, iconClass: 'text-rose-600' },
+  { key: 'other', label: 'Other Essentials (Childcare, Medical, etc.)', Icon: Package, iconClass: 'text-slate-600' },
+];
 
 interface CashFlowModalProps {
   isOpen: boolean;
@@ -50,7 +66,7 @@ export const CashFlowModal: React.FC<CashFlowModalProps> = ({ isOpen, onClose })
     updateProfile({ manualExtraMonthlySurplus: undefined });
   };
 
-  const breakdown = profile.expensesBreakdown || {
+  const breakdown: ExpensesBreakdown = profile.expensesBreakdown || {
     housing: 0,
     utilities: 0,
     groceries: 0,
@@ -79,7 +95,9 @@ export const CashFlowModal: React.FC<CashFlowModalProps> = ({ isOpen, onClose })
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Close"
             className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-amber-100 transition-colors"
           >
             <X className="w-5 h-5" />
@@ -119,21 +137,22 @@ export const CashFlowModal: React.FC<CashFlowModalProps> = ({ isOpen, onClose })
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-800 mb-1">
+                <label htmlFor="income-per-period" className="block text-xs font-bold text-slate-800 mb-1">
                   Net Paycheck (Take-home amount)
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-700 font-bold text-sm">
-                    $
+                    {currencyConfig.symbol}
                   </span>
                   <input
+                    id="income-per-period"
                     type="number"
                     min="0"
                     step="50"
                     value={profile.incomePerPeriod || ''}
                     onChange={(e) => handleIncomeChange(Number(e.target.value))}
                     placeholder="e.g. 2600"
-                    className="w-full pl-8 pr-3.5 py-2.5 rounded-xl bg-white border border-amber-200 text-slate-900 font-black text-base focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 shadow-2xs"
+                    className="w-full pl-12 pr-3.5 py-2.5 rounded-xl bg-white border border-amber-200 text-slate-900 font-black text-base focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 shadow-2xs"
                   />
                 </div>
                 <div className="text-[11px] text-slate-600 font-medium mt-1.5">
@@ -158,95 +177,23 @@ export const CashFlowModal: React.FC<CashFlowModalProps> = ({ isOpen, onClose })
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div>
-                <label className="flex items-center gap-1.5 font-bold text-slate-800 mb-1">
-                  <Home className="w-3.5 h-3.5 text-amber-600" />
-                  <span>Housing (Rent / Base Mortgage)</span>
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={breakdown.housing || ''}
-                  onChange={(e) => updateExpensesBreakdown('housing', Number(e.target.value))}
-                  placeholder="0"
-                  className="w-full px-3 py-2 rounded-lg bg-white border border-amber-200 text-slate-900 font-bold focus:border-emerald-600 shadow-2xs"
-                />
-              </div>
-
-              <div>
-                <label className="flex items-center gap-1.5 font-bold text-slate-800 mb-1">
-                  <Zap className="w-3.5 h-3.5 text-amber-600" />
-                  <span>Utilities (Electric, Water, Wifi)</span>
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={breakdown.utilities || ''}
-                  onChange={(e) => updateExpensesBreakdown('utilities', Number(e.target.value))}
-                  placeholder="0"
-                  className="w-full px-3 py-2 rounded-lg bg-white border border-amber-200 text-slate-900 font-bold focus:border-emerald-600 shadow-2xs"
-                />
-              </div>
-
-              <div>
-                <label className="flex items-center gap-1.5 font-bold text-slate-800 mb-1">
-                  <ShoppingBag className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Groceries & Food Supplies</span>
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={breakdown.groceries || ''}
-                  onChange={(e) => updateExpensesBreakdown('groceries', Number(e.target.value))}
-                  placeholder="0"
-                  className="w-full px-3 py-2 rounded-lg bg-white border border-amber-200 text-slate-900 font-bold focus:border-emerald-600 shadow-2xs"
-                />
-              </div>
-
-              <div>
-                <label className="flex items-center gap-1.5 font-bold text-slate-800 mb-1">
-                  <Car className="w-3.5 h-3.5 text-sky-600" />
-                  <span>Transit & Gas (Excluding car loan)</span>
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={breakdown.transportation || ''}
-                  onChange={(e) => updateExpensesBreakdown('transportation', Number(e.target.value))}
-                  placeholder="0"
-                  className="w-full px-3 py-2 rounded-lg bg-white border border-amber-200 text-slate-900 font-bold focus:border-emerald-600 shadow-2xs"
-                />
-              </div>
-
-              <div>
-                <label className="flex items-center gap-1.5 font-bold text-slate-800 mb-1">
-                  <Shield className="w-3.5 h-3.5 text-purple-600" />
-                  <span>Insurance (Health, Auto, Home)</span>
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={breakdown.insurance || ''}
-                  onChange={(e) => updateExpensesBreakdown('insurance', Number(e.target.value))}
-                  placeholder="0"
-                  className="w-full px-3 py-2 rounded-lg bg-white border border-amber-200 text-slate-900 font-bold focus:border-emerald-600 shadow-2xs"
-                />
-              </div>
-
-              <div>
-                <label className="flex items-center gap-1.5 font-bold text-slate-800 mb-1">
-                  <Tv className="w-3.5 h-3.5 text-rose-600" />
-                  <span>Subscriptions & Phone Plan</span>
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={breakdown.subscriptions || ''}
-                  onChange={(e) => updateExpensesBreakdown('subscriptions', Number(e.target.value))}
-                  placeholder="0"
-                  className="w-full px-3 py-2 rounded-lg bg-white border border-amber-200 text-slate-900 font-bold focus:border-emerald-600 shadow-2xs"
-                />
-              </div>
+              {EXPENSE_FIELDS.map(({ key, label, Icon, iconClass }) => (
+                <div key={key}>
+                  <label htmlFor={`expense-${key}`} className="flex items-center gap-1.5 font-bold text-slate-800 mb-1">
+                    <Icon className={`w-3.5 h-3.5 ${iconClass}`} />
+                    <span>{label}</span>
+                  </label>
+                  <input
+                    id={`expense-${key}`}
+                    type="number"
+                    min="0"
+                    value={breakdown[key] || ''}
+                    onChange={(e) => updateExpensesBreakdown(key, Number(e.target.value))}
+                    placeholder="0"
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-amber-200 text-slate-900 font-bold focus:border-emerald-600 shadow-2xs"
+                  />
+                </div>
+              ))}
             </div>
           </div>
 
@@ -313,10 +260,11 @@ export const CashFlowModal: React.FC<CashFlowModalProps> = ({ isOpen, onClose })
               <div className="flex items-center gap-2">
                 <span className="text-emerald-800 font-black text-base">{currencyConfig.symbol}</span>
                 <input
+                  aria-label="Extra monthly payoff target"
                   type="number"
                   min="0"
                   step="25"
-                  value={profile.manualExtraMonthlySurplus ?? freeCashFlowData.freeCashFlow}
+                  value={profile.manualExtraMonthlySurplus ?? Math.max(0, freeCashFlowData.freeCashFlow)}
                   onChange={(e) => handleManualSurplusChange(Number(e.target.value))}
                   className="w-28 px-3 py-1.5 rounded-lg bg-white border-2 border-emerald-600 text-slate-900 font-black text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
                 />

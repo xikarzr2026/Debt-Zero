@@ -5,6 +5,7 @@ import { DebtItem, DebtCategory } from '@/types/debt';
 import { DEBT_CATEGORY_LABELS } from '@/lib/presets';
 import { X } from 'lucide-react';
 import { ModalShell } from './ModalShell';
+import { useDebt } from '@/context/DebtContext';
 
 interface AddEditDebtModalProps {
   isOpen: boolean;
@@ -25,7 +26,9 @@ const AddEditDebtForm: React.FC<AddEditDebtModalProps> = ({
   const [minPayment, setMinPayment] = useState(editingDebt ? String(editingDebt.minPayment) : '');
   const [dueDate, setDueDate] = useState(editingDebt ? String(editingDebt.dueDate || 15) : '15');
   const [notes, setNotes] = useState(editingDebt?.notes || '');
+  // New debts get the next free priority slot when added (see DebtContext.addDebt)
   const customPriority = editingDebt?.customPriority || 1;
+  const { currencyConfig } = useDebt();
 
   // When changing category for a new debt, prepopulate typical APR
   const handleCategoryChange = (newCat: DebtCategory) => {
@@ -45,7 +48,10 @@ const AddEditDebtForm: React.FC<AddEditDebtModalProps> = ({
     const parsedMin = Number(minPayment);
     if (!Number.isFinite(numBalance) || numBalance < 0 || numBalance > 1_000_000_000) return;
     if (!Number.isFinite(numApr) || numApr < 0 || numApr > 100) return;
-    const numMin = Number.isFinite(parsedMin) && parsedMin >= 0 ? parsedMin : Math.max(25, numBalance * 0.02);
+    const numMin =
+      minPayment.trim() !== '' && Number.isFinite(parsedMin) && parsedMin >= 0
+        ? parsedMin
+        : Math.max(25, numBalance * 0.02);
     const due = parseInt(dueDate, 10);
 
     const payload: Omit<DebtItem, 'id'> = {
@@ -76,7 +82,9 @@ const AddEditDebtForm: React.FC<AddEditDebtModalProps> = ({
             </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Close"
             className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-amber-100 transition-colors"
           >
             <X className="w-5 h-5" />
@@ -112,10 +120,11 @@ const AddEditDebtForm: React.FC<AddEditDebtModalProps> = ({
 
           {/* Debt Name */}
           <div>
-            <label className="block text-xs font-bold text-slate-800 mb-1">
+            <label htmlFor="debt-name" className="block text-xs font-bold text-slate-800 mb-1">
               Account / Creditor Name *
             </label>
             <input
+              id="debt-name"
               type="text"
               required
               value={name}
@@ -128,13 +137,14 @@ const AddEditDebtForm: React.FC<AddEditDebtModalProps> = ({
           {/* Current Balance & APR */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-slate-800 mb-1">
-                Current Balance Owed ($) *
+              <label htmlFor="debt-balance" className="block text-xs font-bold text-slate-800 mb-1">
+                Current Balance Owed ({currencyConfig.symbol}) *
               </label>
               <input
+                id="debt-balance"
                 type="number"
                 step="0.01"
-                min="1"
+                min="0"
                 required
                 value={balance}
                 onChange={(e) => setBalance(e.target.value)}
@@ -144,14 +154,15 @@ const AddEditDebtForm: React.FC<AddEditDebtModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-800 mb-1">
+              <label htmlFor="debt-apr" className="block text-xs font-bold text-slate-800 mb-1">
                 Interest Rate (APR %) *
               </label>
               <input
+                id="debt-apr"
                 type="number"
                 step="0.01"
                 min="0"
-                max="99"
+                max="100"
                 required
                 value={apr}
                 onChange={(e) => setApr(e.target.value)}
@@ -164,26 +175,27 @@ const AddEditDebtForm: React.FC<AddEditDebtModalProps> = ({
           {/* Minimum Monthly Payment & Due Date */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-slate-800 mb-1">
-                Minimum Monthly Payment ($) *
+              <label htmlFor="debt-min" className="block text-xs font-bold text-slate-800 mb-1">
+                Minimum Monthly Payment ({currencyConfig.symbol})
               </label>
               <input
+                id="debt-min"
                 type="number"
                 step="0.01"
-                min="1"
-                required
+                min="0"
                 value={minPayment}
                 onChange={(e) => setMinPayment(e.target.value)}
-                placeholder="e.g. 120"
+                placeholder="Blank = 2% of balance"
                 className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-amber-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-slate-900 font-bold shadow-2xs"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-800 mb-1">
+              <label htmlFor="debt-due" className="block text-xs font-bold text-slate-800 mb-1">
                 Due Date (Day of Month)
               </label>
               <input
+                id="debt-due"
                 type="number"
                 min="1"
                 max="31"
@@ -197,10 +209,11 @@ const AddEditDebtForm: React.FC<AddEditDebtModalProps> = ({
 
           {/* Notes */}
           <div>
-            <label className="block text-xs font-bold text-slate-800 mb-1">
+            <label htmlFor="debt-notes" className="block text-xs font-bold text-slate-800 mb-1">
               Optional Notes / Promotion Details
             </label>
             <input
+              id="debt-notes"
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}

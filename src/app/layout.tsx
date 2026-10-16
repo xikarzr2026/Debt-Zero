@@ -31,6 +31,22 @@ export const metadata: Metadata = {
   ],
 };
 
+// GitHub Pages cannot send response headers, so the policy ships as a meta tag. The static export
+// inlines its bootstrap scripts and Recharts sets inline styles, hence 'unsafe-inline'. Dev mode is
+// skipped because HMR needs eval and websockets.
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self'",
+  "connect-src 'self'",
+  "worker-src 'self' blob:",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'none'",
+].join('; ');
+
 export default function RootLayout({
   children,
 }: {
@@ -41,6 +57,11 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        {process.env.NODE_ENV === 'production' && (
+          <meta httpEquiv="Content-Security-Policy" content={CONTENT_SECURITY_POLICY} />
+        )}
+      </head>
       <body className="min-h-full flex flex-col bg-[#fbf9f4] text-slate-800 transition-colors selection:bg-amber-200 selection:text-amber-900">
         <DebtProvider>{children}</DebtProvider>
       </body>

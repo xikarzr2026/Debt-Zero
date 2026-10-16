@@ -327,3 +327,122 @@ test('16. JPY interest rounds to whole yen', () => {
   assert.equal(calculateMonthlyInterest(100000, 12, 0), 1000);
   assert.equal(calculateMonthlyInterest(100, 12, 0), 1);
 });
+
+test('17. import de-duplicates colliding ids without hanging', async () => {
+  const { parseDebtBackup } = await import('../src/lib/debtEngine.ts');
+  const res = parseDebtBackup(JSON.stringify({
+    profile: { name: 'x' },
+    debts: [
+      { id: 'a-3', name: 'one', balance: 100, apr: 5, minPayment: 10 },
+      { id: 'a', name: 'two', balance: 100, apr: 5, minPayment: 10 },
+      { id: 'a', name: 'three', balance: 100, apr: 5, minPayment: 10 },
+      { id: 'a', name: 'four', balance: 100, apr: 5, minPayment: 10 },
+    ],
+  }));
+  const ids = res.debts!.map((d) => d.id);
+  assert.equal(new Set(ids).size, 4);
+  assert.deepEqual(ids, ['a-3', 'a', 'a-2', 'a-4']);
+});
+
+test('18. import keeps a flat living-expense total that has no breakdown', async () => {
+  const { parseDebtBackup } = await import('../src/lib/debtEngine.ts');
+  const res = parseDebtBackup(JSON.stringify({
+    profile: { name: 'x', incomePerPeriod: 5000, livingExpenses: 3000 },
+    debts: [{ name: 'd', balance: 1000, apr: 10, minPayment: 50 }],
+  }));
+  const sum = Object.values(res.profile!.expensesBreakdown).reduce((s, v) => s + v, 0);
+  assert.equal(res.profile!.livingExpenses, 3000);
+  assert.equal(sum, 3000);
+  assert.equal(res.profile!.expensesBreakdown.other, 3000);
+});
+
+test('19. empty debt lists are allowed only when requested', async () => {
+  const { parseDebtBackup } = await import('../src/lib/debtEngine.ts');
+  const json = JSON.stringify({ profile: { name: 'x' }, debts: [] });
+  assert.equal(parseDebtBackup(json).success, false);
+  const ok = parseDebtBackup(json, { allowEmptyDebts: true });
+  assert.equal(ok.success, true);
+  assert.deepEqual(ok.debts, []);
+});
+
+test('20. windfall still applies under minimums-only', () => {
+  const debts = [
+    createDebt({ id: '1', name: 'A', balance: 5000, apr: 24, minPayment: 150 }),
+    createDebt({ id: '2', name: 'B', balance: 3000, apr: 18, minPayment: 90 }),
+  ];
+  const c = runEngineComparison({
+    debts,
+    monthlySurplus: 200,
+    windfall: { amount: 3000, type: 'one_time', targetDebtId: 'auto_optimal' },
+    startDate: new Date(2026, 0, 1),
+    activeStrategy: 'minimums_only',
+  });
+  assert.ok(c.windfallImpact!.interestSaved > 0);
+  assert.ok(c.windfallImpact!.monthsSaved > 0);
+  assert.equal(c.windfallImpact!.appliedTargetDebtName, 'A');
+  // The plain baseline is unaffected by the windfall
+  assert.equal(c.baselineMinimums.schedule[0].payments.every((p) => p.extraPayment === 0), true);
+});
+
+test('21. recurring windfall keeps going to its explicit target', () => {
+  const debts = [
+    createDebt({ id: '1', name: 'A', balance: 5000, apr: 24, minPayment: 150 }),
+    createDebt({ id: '2', name: 'B', balance: 3000, apr: 18, minPayment: 90 }),
+  ];
+  const c = runEngineComparison({
+    debts,
+    monthlySurplus: 100,
+    windfall: { amount: 300, type: 'monthly_extra', targetDebtId: '2' },
+    startDate: new Date(2026, 0, 1),
+  });
+  for (const month of c.windfallAvalanche!.schedule.slice(0, 3)) {
+    const a = month.payments.find((p) => p.debtId === '1')!;
+    const b = month.payments.find((p) => p.debtId === '2')!;
+    assert.equal(b.extraPayment, 300, `month ${month.monthIndex}: windfall goes to target`);
+    assert.equal(a.extraPayment, 100, `month ${month.monthIndex}: surplus follows avalanche`);
+  }
+});
+
+test('22. unused minimum in a payoff month joins that month\'s extra pool', () => {
+  const result = simulatePayoffSchedule({
+    debts: [
+      createDebt({ id: 's', name: 'Small', balance: 30, apr: 0, minPayment: 200 }),
+      createDebt({ id: 'b', name: 'Big', balance: 5000, apr: 20, minPayment: 100 }),
+    ],
+    monthlySurplus: 0,
+    strategy: 'avalanche',
+    startDate: new Date(2026, 0, 1),
+  });
+  assert.equal(result.schedule[0].totalPayment, 300);
+  assert.equal(result.schedule[0].payments.find((p) => p.debtId === 'b')!.extraPayment, 170);
+});
+
+test('23. savings are not comparable when the baseline never pays off', async () => {
+  const { planSavings } = await import('../src/lib/debtEngine.ts');
+  const c = runEngineComparison({
+    debts: [createDebt({ id: 't', name: 'Trap', balance: 20000, apr: 24, minPayment: 300 })],
+    monthlySurplus: 500,
+    startDate: new Date(2026, 0, 1),
+  });
+  assert.equal(c.baselineMinimums.unpayable, true);
+  assert.equal(c.avalanche.unpayable, false);
+  const s = planSavings(c.baselineMinimums, c.avalanche);
+  assert.equal(s.comparable, false);
+  assert.equal(s.interestSaved, 0);
+  assert.equal(s.monthsSaved, 0);
+});
+
+test('24. negative amortization uses currency-aware rounding and floors', () => {
+  const [alert] = detectNegativeAmortization(
+    [createDebt({ id: 'y', name: 'Yen', balance: 100000, apr: 24, minPayment: 1000 })],
+    'JPY'
+  );
+  assert.equal(alert.interestAccruing, 2000);
+  // interest 2000 + max(2500 floor, 1500) = 4500
+  assert.equal(alert.recommendedMinimum, 4500);
+});
+
+test('25. currency formatting honours the locale', () => {
+  assert.equal(formatCurrencyValue(1234.5, '€', 2, 'de-DE'), '€1.234,50');
+  assert.equal(formatCurrencyValue(1234.5, '$', 2), '$1,234.50');
+});

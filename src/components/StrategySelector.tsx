@@ -102,6 +102,8 @@ export const StrategySelector: React.FC = () => {
           return (
             <button
               key={strat.id}
+              type="button"
+              aria-pressed={isSelected}
               onClick={() => setStrategy(strat.id)}
               className={`text-left p-4 rounded-xl border transition-all relative overflow-hidden flex flex-col justify-between ${
                 isSelected
@@ -176,7 +178,7 @@ export const StrategySelector: React.FC = () => {
                         : 'text-slate-800'
                     }`}
                   >
-                    {formatCurrency(strat.totalInterest)}
+                    {strat.debtFreeDate === 'Does not pay off' ? 'Keeps growing' : formatCurrency(strat.totalInterest)}
                   </div>
                 </div>
               </div>

@@ -23,6 +23,7 @@ import {
   currencyDecimals,
 } from '@/lib/debtEngine';
 import { PRESET_SCENARIOS } from '@/lib/presets';
+import { APP_VERSION } from '@/lib/version';
 
 interface ChecklistItemState {
   debtId: string;
@@ -61,18 +62,22 @@ interface DebtContextType {
   setStrategy: (strategy: OptimizationStrategy) => void;
   setWindfall: (windfall: WindfallSimulation) => void;
   resetWindfall: () => void;
-  applyWindfallToSurplus: () => void;
   loadPreset: (presetId: string) => void;
   toggleChecklistItem: (debtId: string) => void;
   resetChecklist: () => void;
   exportDataJSON: () => string;
   importDataJSON: (jsonStr: string) => { success: boolean; error?: string };
+  clearAllData: () => void;
   formatCurrency: (val: number, decimals?: number) => string;
 }
 
 const STORAGE_KEY = 'debtzero_userdata_v1';
 
 const DebtContext = createContext<DebtContextType | undefined>(undefined);
+
+function nextPriority(debts: DebtItem[]): number {
+  return debts.reduce((max, d) => Math.max(max, d.customPriority || 0), 0) + 1;
+}
 
 export function DebtProvider({ children }: { children: ReactNode }) {
   const defaultPreset = PRESET_SCENARIOS[0]; // High-APR Card Overwhelm default
@@ -96,14 +101,29 @@ export function DebtProvider({ children }: { children: ReactNode }) {
     try {
       const savedData = localStorage.getItem(STORAGE_KEY);
       if (savedData) {
-        const parsed = JSON.parse(savedData);
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        if (parsed.profile) setProfileState(parsed.profile);
-        if (parsed.debts) setDebtsState(parsed.debts);
-        if (parsed.strategy) setStrategy(parsed.strategy);
-        if (parsed.windfall) setWindfall(parsed.windfall);
-        if (parsed.currentPresetId !== undefined) setCurrentPresetId(parsed.currentPresetId);
-        if (parsed.checklistCompletedMap) setChecklistCompletedMap(parsed.checklistCompletedMap);
+        // Stored data gets the same validation as an imported backup
+        const restored = parseDebtBackup(savedData, { allowEmptyDebts: true });
+        if (restored.success && restored.profile && restored.debts) {
+          const parsed = JSON.parse(savedData);
+          // eslint-disable-next-line react-hooks/set-state-in-effect
+          setProfileState(restored.profile);
+          setDebtsState(restored.debts);
+          if (restored.strategy) setStrategy(restored.strategy);
+          if (restored.windfall) setWindfall(restored.windfall);
+          if (typeof parsed.currentPresetId === 'string' || parsed.currentPresetId === null) {
+            setCurrentPresetId(parsed.currentPresetId);
+          }
+          if (parsed.checklistCompletedMap && typeof parsed.checklistCompletedMap === 'object') {
+            const checks: Record<string, boolean> = {};
+            for (const [id, done] of Object.entries(parsed.checklistCompletedMap)) {
+              if (done === true) checks[id] = true;
+            }
+            setChecklistCompletedMap(checks);
+          }
+          if (typeof parsed.checklistPlanKey === 'string') setChecklistPlanKey(parsed.checklistPlanKey);
+        } else {
+          console.error('Ignoring unreadable DebtZero data:', restored.error);
+        }
       }
     } catch (e) {
       console.error('Failed to load stored DebtZero data:', e);
@@ -123,17 +143,18 @@ export function DebtProvider({ children }: { children: ReactNode }) {
         windfall,
         currentPresetId,
         checklistCompletedMap,
+        checklistPlanKey,
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
     } catch (e) {
       console.error('Failed to save DebtZero data to localStorage:', e);
     }
-  }, [profile, debts, strategy, windfall, currentPresetId, checklistCompletedMap, isLoaded]);
+  }, [profile, debts, strategy, windfall, currentPresetId, checklistCompletedMap, checklistPlanKey, isLoaded]);
 
   const currencyConfig = SUPPORTED_CURRENCIES[profile.currency as CurrencyCode] || SUPPORTED_CURRENCIES.USD;
 
   const formatCurrency = (val: number, decimals: number = currencyDecimals(profile.currency)) => {
-    return formatCurrencyValue(val, currencyConfig.symbol, decimals);
+    return formatCurrencyValue(val, currencyConfig.symbol, decimals, currencyConfig.locale);
   };
 
   // Compute normalized monthly income
@@ -201,8 +222,8 @@ export function DebtProvider({ children }: { children: ReactNode }) {
 
   // Negative amortization alerts
   const negativeAmortAlerts = useMemo(() => {
-    return detectNegativeAmortization(debts);
-  }, [debts]);
+    return detectNegativeAmortization(debts, profile.currency);
+  }, [debts, profile.currency]);
 
   // Monthly execution checklist. Checks reset when the month-1 payment mix changes.
   const planKey = useMemo(() => {
@@ -261,7 +282,7 @@ export function DebtProvider({ children }: { children: ReactNode }) {
 
   const addDebt = (debt: Omit<DebtItem, 'id'>) => {
     const newId = `debt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
-    setDebtsState((prev) => [...prev, { ...debt, id: newId }]);
+    setDebtsState((prev) => [...prev, { ...debt, id: newId, customPriority: nextPriority(prev) }]);
     setCurrentPresetId(null);
   };
 
@@ -283,7 +304,7 @@ export function DebtProvider({ children }: { children: ReactNode }) {
       id: `debt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       name: `${existing.name} (Copy)`,
     };
-    setDebtsState((prev) => [...prev, duplicated]);
+    setDebtsState((prev) => [...prev, { ...duplicated, customPriority: nextPriority(prev) }]);
     setCurrentPresetId(null);
   };
 
@@ -293,15 +314,6 @@ export function DebtProvider({ children }: { children: ReactNode }) {
       type: 'one_time',
       targetDebtId: 'auto_optimal',
     });
-  };
-
-  const applyWindfallToSurplus = () => {
-    if (windfall.type === 'monthly_extra' && windfall.amount > 0) {
-      updateProfile({
-        manualExtraMonthlySurplus: effectiveSurplus + windfall.amount,
-      });
-      resetWindfall();
-    }
   };
 
   const loadPreset = (presetId: string) => {
@@ -336,7 +348,7 @@ export function DebtProvider({ children }: { children: ReactNode }) {
   const exportDataJSON = () => {
     const data = {
       exportedAt: new Date().toISOString(),
-      version: '1.1',
+      version: APP_VERSION,
       profile,
       debts,
       strategy,
@@ -358,6 +370,38 @@ export function DebtProvider({ children }: { children: ReactNode }) {
     setChecklistCompletedMap({});
     setChecklistPlanKey('');
     return { success: true };
+  };
+
+  // Wipes stored data and starts over with an empty plan (not a demo preset)
+  const clearAllData = () => {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (e) {
+      console.error('Failed to clear DebtZero data:', e);
+    }
+    setProfileState({
+      ...JSON.parse(JSON.stringify(defaultPreset.profile)),
+      name: 'Friend',
+      incomePerPeriod: 0,
+      monthlyNetIncome: 0,
+      livingExpenses: 0,
+      expensesBreakdown: {
+        housing: 0,
+        utilities: 0,
+        groceries: 0,
+        transportation: 0,
+        insurance: 0,
+        subscriptions: 0,
+        other: 0,
+      },
+      manualExtraMonthlySurplus: undefined,
+    });
+    setDebtsState([]);
+    setStrategy('avalanche');
+    resetWindfall();
+    setCurrentPresetId(null);
+    setChecklistCompletedMap({});
+    setChecklistPlanKey('');
   };
 
   return (
@@ -387,12 +431,12 @@ export function DebtProvider({ children }: { children: ReactNode }) {
         setStrategy,
         setWindfall,
         resetWindfall,
-        applyWindfallToSurplus,
         loadPreset,
         toggleChecklistItem,
         resetChecklist,
         exportDataJSON,
         importDataJSON,
+        clearAllData,
         formatCurrency,
       }}
     >

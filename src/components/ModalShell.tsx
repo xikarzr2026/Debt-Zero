@@ -21,6 +21,12 @@ export function ModalShell({
 }: ModalShellProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
+  // Parents pass inline onClose handlers; reading it through a ref keeps the focus effect
+  // from re-running (and stealing focus from inputs) on every parent render.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
   useEffect(() => {
     if (!isOpen) return;
@@ -35,7 +41,7 @@ export function ModalShell({
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (event.key !== 'Tab' || !panel) return;
@@ -57,7 +63,7 @@ export function ModalShell({
       document.removeEventListener('keydown', onKeyDown);
       previouslyFocused?.focus?.();
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

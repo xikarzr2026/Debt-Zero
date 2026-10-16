@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useDebt } from '@/context/DebtContext';
+import { planSavings, currencyDecimals } from '@/lib/debtEngine';
 import {
   TrendingDown,
   Calendar,
@@ -24,26 +25,30 @@ export const HeroMetricCards: React.FC<HeroMetricCardsProps> = ({ onOpenCashFlow
     effectiveSurplus,
     profile,
     updateProfile,
+    currencyConfig,
   } = useDebt();
 
   const totalBalance = debts.reduce((sum, d) => sum + (Number(d.balance) || 0), 0);
-  const totalMinPayments = debts.reduce((sum, d) => sum + (Number(d.minPayment) || 0), 0);
+  const totalMinPayments = debts
+    .filter((d) => (Number(d.balance) || 0) > 0)
+    .reduce((sum, d) => sum + (Number(d.minPayment) || 0), 0);
 
   // Blended average APR weighted by balance
   const weightedApr = totalBalance > 0
     ? (debts.reduce((sum, d) => sum + d.balance * d.apr, 0) / totalBalance).toFixed(1)
     : '0.0';
 
-  // Compare active plan vs baseline minimums
-  const baselineMonths = comparison.baselineMinimums.totalMonths;
-  const activeMonths = activePlan.totalMonths;
-  const monthsSaved = Math.max(0, baselineMonths - activeMonths);
+  // Compare active plan vs baseline minimums (only meaningful when both plans pay off)
+  const { interestSaved, monthsSaved } = planSavings(
+    comparison.baselineMinimums,
+    activePlan,
+    currencyDecimals(profile.currency)
+  );
+  const baselineNeverPays = comparison.baselineMinimums.unpayable && !activePlan.unpayable;
   const yearsSaved = Math.floor(monthsSaved / 12);
   const remMonthsSaved = monthsSaved % 12;
-
-  const baselineInterest = comparison.baselineMinimums.totalInterestPaid;
-  const activeInterest = activePlan.totalInterestPaid;
-  const interestSaved = Math.max(0, baselineInterest - activeInterest);
+  const step = currencyConfig.code === 'JPY' ? 5000 : currencyConfig.code === 'MXN' ? 1000 : 50;
+  const bigStep = step * 4;
 
   const handleSurplusChange = (delta: number) => {
     const current = profile.manualExtraMonthlySurplus ?? effectiveSurplus;
@@ -95,6 +100,11 @@ export const HeroMetricCards: React.FC<HeroMetricCardsProps> = ({ onOpenCashFlow
             <span className="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 text-xs font-semibold border border-rose-200">
               Still owes {formatCurrency(activePlan.remainingBalance)}
             </span>
+          ) : baselineNeverPays ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold text-xs border border-emerald-300">
+              <Zap className="w-3 h-3 fill-current text-emerald-600" />
+              Minimums never would
+            </span>
           ) : monthsSaved > 0 ? (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold text-xs border border-emerald-300">
               <Zap className="w-3 h-3 fill-current text-emerald-600" />
@@ -124,10 +134,23 @@ export const HeroMetricCards: React.FC<HeroMetricCardsProps> = ({ onOpenCashFlow
           </div>
         </div>
         <div className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
-          {formatCurrency(activePlan.totalInterestPaid)}
+          {activePlan.unpayable ? (
+            <span className="text-rose-700 text-xl">Keeps growing</span>
+          ) : (
+            formatCurrency(activePlan.totalInterestPaid)
+          )}
         </div>
         <div className="mt-3 flex items-center gap-2">
-          {interestSaved > 0 ? (
+          {activePlan.unpayable ? (
+            <span className="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 font-semibold text-xs border border-rose-200">
+              Interest outpaces payments
+            </span>
+          ) : baselineNeverPays ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold text-xs border border-emerald-300">
+              <Sparkles className="w-3 h-3 text-emerald-600" />
+              Avoids an endless interest trap
+            </span>
+          ) : interestSaved > 0 ? (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold text-xs border border-emerald-300">
               <Sparkles className="w-3 h-3 text-emerald-600" />
               Saved {formatCurrency(interestSaved)}!
@@ -139,7 +162,9 @@ export const HeroMetricCards: React.FC<HeroMetricCardsProps> = ({ onOpenCashFlow
           )}
         </div>
         <div className="mt-2 text-[11px] text-slate-500 font-medium">
-          Lifetime cost: {formatCurrency(activePlan.totalAmountPaid)}
+          {activePlan.unpayable
+            ? `Paid over ${activePlan.totalMonths} mos: ${formatCurrency(activePlan.totalAmountPaid)}`
+            : `Lifetime cost: ${formatCurrency(activePlan.totalAmountPaid)}`}
         </div>
       </div>
 
@@ -154,6 +179,7 @@ export const HeroMetricCards: React.FC<HeroMetricCardsProps> = ({ onOpenCashFlow
             onClick={onOpenCashFlow}
             className="text-xs text-emerald-700 hover:text-emerald-900 transition-colors p-1"
             title="Adjust Income & Living Expenses"
+            aria-label="Adjust income and living expenses"
           >
             <Sliders className="w-4 h-4" />
           </button>
@@ -163,26 +189,27 @@ export const HeroMetricCards: React.FC<HeroMetricCardsProps> = ({ onOpenCashFlow
         </div>
         <div className="mt-3 flex items-center gap-1.5">
           <button
-            onClick={() => handleSurplusChange(-50)}
+            onClick={() => handleSurplusChange(-step)}
             disabled={effectiveSurplus <= 0}
             className="w-7 h-7 rounded-lg bg-white border border-amber-200 text-slate-700 hover:bg-amber-100 disabled:opacity-40 font-bold text-sm flex items-center justify-center transition-all shadow-2xs"
-            title="Decrease surplus by $50"
+            title={`Decrease surplus by ${formatCurrency(step, 0)}`}
+            aria-label={`Decrease surplus by ${formatCurrency(step, 0)}`}
           >
             -
           </button>
           <button
-            onClick={() => handleSurplusChange(50)}
+            onClick={() => handleSurplusChange(step)}
             className="px-2.5 h-7 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center transition-all shadow-xs"
-            title="Increase surplus by $50"
+            title={`Increase surplus by ${formatCurrency(step, 0)}`}
           >
-            +$50
+            +{formatCurrency(step, 0)}
           </button>
           <button
-            onClick={() => handleSurplusChange(200)}
+            onClick={() => handleSurplusChange(bigStep)}
             className="px-2.5 h-7 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs flex items-center justify-center transition-all shadow-xs"
-            title="Increase surplus by $200"
+            title={`Increase surplus by ${formatCurrency(bigStep, 0)}`}
           >
-            +$200
+            +{formatCurrency(bigStep, 0)}
           </button>
         </div>
         <div className="mt-2 flex items-center justify-between text-[11px] text-slate-600 font-medium">

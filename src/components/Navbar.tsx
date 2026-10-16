@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDebt } from '@/context/DebtContext';
 import { PRESET_SCENARIOS } from '@/lib/presets';
 import { SUPPORTED_CURRENCIES, CurrencyCode } from '@/types/debt';
+import { APP_VERSION } from '@/lib/version';
 import {
   Zap,
   Download,
@@ -35,6 +36,30 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [presetDropdownOpen, setPresetDropdownOpen] = useState(false);
   const [currencyDropdownOpen, setCurrencyDropdownOpen] = useState(false);
 
+  useEffect(() => {
+    if (!presetDropdownOpen && !currencyDropdownOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setPresetDropdownOpen(false);
+        setCurrencyDropdownOpen(false);
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [presetDropdownOpen, currencyDropdownOpen]);
+
+  const handleLoadPreset = (presetId: string) => {
+    setPresetDropdownOpen(false);
+    // Presets replace the whole plan; only ask when the user has their own data loaded
+    if (
+      currentPresetId === null &&
+      !window.confirm('Load this demo profile? It replaces your current debts and budget. Export a backup first to keep them.')
+    ) {
+      return;
+    }
+    loadPreset(presetId);
+  };
+
   return (
     <header className="sticky top-0 z-40 w-full bg-white/95 border-b border-amber-200/80 backdrop-blur-md shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
@@ -51,7 +76,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 Debt<span className="text-emerald-700">Zero</span>
               </span>
               <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
-                Prairie v1.1
+                Prairie v{APP_VERSION}
               </span>
             </div>
             <p className="text-xs text-slate-500 hidden sm:block">
@@ -86,6 +111,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Preset Scenarios Switcher */}
           <div className="relative">
             <button
+              type="button"
+              aria-haspopup="true"
+              aria-expanded={presetDropdownOpen}
+              aria-label="Load a demo profile"
               onClick={() => {
                 setPresetDropdownOpen(!presetDropdownOpen);
                 setCurrencyDropdownOpen(false);
@@ -112,10 +141,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                     return (
                       <button
                         key={preset.id}
-                        onClick={() => {
-                          loadPreset(preset.id);
-                          setPresetDropdownOpen(false);
-                        }}
+                        type="button"
+                        onClick={() => handleLoadPreset(preset.id)}
                         className={`w-full text-left p-2 rounded-lg text-xs transition-colors flex flex-col gap-0.5 ${
                           isSelected
                             ? 'bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold'
@@ -142,6 +169,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Currency Switcher */}
           <div className="relative">
             <button
+              type="button"
+              aria-haspopup="true"
+              aria-expanded={currencyDropdownOpen}
+              aria-label={`Currency: ${profile.currency}`}
               onClick={() => {
                 setCurrencyDropdownOpen(!currencyDropdownOpen);
                 setPresetDropdownOpen(false);
@@ -189,6 +220,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={onOpenImportExport}
             className="p-2 text-xs font-medium rounded-lg border border-amber-200 bg-white hover:bg-amber-50 transition-colors text-slate-700 shadow-xs"
             title="Import / Export Data"
+            aria-label="Import or export data"
           >
             <Download className="w-4 h-4 text-emerald-700" />
           </button>
@@ -198,6 +230,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={onOpenHelp}
             className="p-2 text-xs font-medium rounded-lg border border-amber-200 bg-white hover:bg-amber-50 transition-colors text-slate-700 shadow-xs"
             title="Financial Engine Guide"
+            aria-label="How calculations work"
           >
             <HelpCircle className="w-4 h-4 text-amber-700" />
           </button>

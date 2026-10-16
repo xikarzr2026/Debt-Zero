@@ -16,6 +16,8 @@ import {
 } from 'recharts';
 import { Flag } from 'lucide-react';
 
+const CHART_MONTH_CAP = 180;
+
 export const PayoffTimelineChart: React.FC = () => {
   const {
     activePlan,
@@ -35,16 +37,11 @@ export const PayoffTimelineChart: React.FC = () => {
   const chartData = useMemo(() => {
     const activeSchedule = activePlan.schedule || [];
     const baselineSchedule = comparison.baselineMinimums.schedule || [];
-    const windfallSchedule =
-      (activePlan.strategy === 'snowball'
-        ? comparison.windfallSnowball
-        : comparison.windfallAvalanche
-      )?.schedule || [];
 
     // Max length to show
     const maxMonths = Math.min(
       Math.max(activeSchedule.length, Math.min(baselineSchedule.length, 120)),
-      180
+      CHART_MONTH_CAP
     );
 
     interface TimelineChartPoint {
@@ -52,7 +49,6 @@ export const PayoffTimelineChart: React.FC = () => {
       date: string;
       activeBalance: number;
       baselineBalance: number;
-      windfallBalance?: number | null;
       activeInterestCumulative: number;
       baselineInterestCumulative: number;
       milestone: string | null;
@@ -90,8 +86,6 @@ export const PayoffTimelineChart: React.FC = () => {
       if (baseSnap) baselineCumInterest += baseSnap.totalInterestCharged;
       if (i % step !== 0 && i !== maxMonths - 1) continue;
 
-      const windfallSnap = windfallSchedule[i];
-
       if (!activeSnap && !baseSnap) break;
 
       const dateStr = activeSnap?.dateFormatted || baseSnap?.dateFormatted || `M${i + 1}`;
@@ -101,7 +95,6 @@ export const PayoffTimelineChart: React.FC = () => {
         date: dateStr,
         activeBalance: activeSnap ? activeSnap.totalEndingBalance : 0,
         baselineBalance: baseSnap ? baseSnap.totalEndingBalance : 0,
-        windfallBalance: windfallSnap ? windfallSnap.totalEndingBalance : null,
         activeInterestCumulative: Number(activeCumInterest.toFixed(0)),
         baselineInterestCumulative: Number(baselineCumInterest.toFixed(0)),
         milestone: activeSnap?.paidOffDebtsThisMonth?.length
@@ -146,6 +139,8 @@ export const PayoffTimelineChart: React.FC = () => {
         {/* View Toggle Tabs */}
         <div className="flex items-center bg-amber-100/70 p-1 rounded-xl border border-amber-200 self-start sm:self-auto">
           <button
+            type="button"
+            aria-pressed={chartView === 'balance'}
             onClick={() => setChartView('balance')}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               chartView === 'balance'
@@ -156,6 +151,8 @@ export const PayoffTimelineChart: React.FC = () => {
             Balance Curve
           </button>
           <button
+            type="button"
+            aria-pressed={chartView === 'cumulative_interest'}
             onClick={() => setChartView('cumulative_interest')}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               chartView === 'cumulative_interest'
@@ -166,6 +163,8 @@ export const PayoffTimelineChart: React.FC = () => {
             Interest Comparison
           </button>
           <button
+            type="button"
+            aria-pressed={chartView === 'stacked_debts'}
             onClick={() => setChartView('stacked_debts')}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               chartView === 'stacked_debts'
@@ -394,6 +393,13 @@ export const PayoffTimelineChart: React.FC = () => {
           )}
         </ResponsiveContainer>
       </div>
+
+      {activePlan.schedule.length > CHART_MONTH_CAP && (
+        <p className="mt-2 text-[11px] text-slate-500 font-medium">
+          Chart shows the first {CHART_MONTH_CAP / 12} years; the full {activePlan.totalMonths}-month schedule is in the
+          amortization table below.
+        </p>
+      )}
 
       {/* Payoff Milestones Timeline Bar */}
       {activePlan.milestones.length > 0 && (

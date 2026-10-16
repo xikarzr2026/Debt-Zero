@@ -23,20 +23,13 @@ export const WindfallSimulator: React.FC = () => {
   } = useDebt();
 
   const windfallImpact = comparison.windfallImpact;
-  const windfallPlan =
-    strategy === 'snowball'
-      ? comparison.windfallSnowball
-      : strategy === 'custom'
-        ? comparison.windfallAvalanche
-        : comparison.windfallAvalanche;
-  const baselinePlan =
-    strategy === 'snowball'
-      ? comparison.snowball
-      : strategy === 'custom'
-        ? comparison.custom
-        : strategy === 'minimums_only'
-          ? comparison.baselineMinimums
-          : comparison.avalanche;
+  // windfallImpact is always computed against the active strategy, so it is the source of truth
+  const quickAmounts =
+    currencyConfig.code === 'JPY'
+      ? [25000, 50000, 100000, 250000, 500000]
+      : currencyConfig.code === 'MXN'
+        ? [5000, 10000, 20000, 50000, 100000]
+        : [250, 500, 1000, 2500, 5000];
 
   const triggerConfetti = () => {
     confetti({
@@ -61,18 +54,14 @@ export const WindfallSimulator: React.FC = () => {
     });
   };
 
-  const activePlanInterest = windfallImpact?.interestSaved != null && baselinePlan
-    ? (baselinePlan.totalInterestPaid)
-    : comparison.avalanche.totalInterestPaid;
-  const windfallInterest = windfallPlan?.totalInterestPaid ?? activePlanInterest;
-  const interestSaved = windfallImpact?.interestSaved ?? Math.max(0, activePlanInterest - windfallInterest);
-
-  const activeMonths = baselinePlan?.totalMonths ?? comparison.avalanche.totalMonths;
-  const windfallMonths = windfallPlan?.totalMonths ?? activeMonths;
-  const monthsSaved = windfallImpact?.monthsSaved ?? Math.max(0, activeMonths - windfallMonths);
-
-  const newDate = windfallImpact?.newDebtFreeDate || windfallPlan?.debtFreeDate || comparison.avalanche.debtFreeDate;
+  const interestSaved = windfallImpact?.interestSaved ?? 0;
+  const monthsSaved = windfallImpact?.monthsSaved ?? 0;
+  const newDate = windfallImpact?.newDebtFreeDate || '—';
   const targetDebtName = windfallImpact?.appliedTargetDebtName || 'priority debt';
+  const notComparable =
+    !!windfallImpact &&
+    (windfallImpact.newDebtFreeDate === 'Does not pay off' ||
+      windfallImpact.originalDebtFreeDate === 'Does not pay off');
 
   return (
     <div className="glass-panel rounded-2xl p-5 sm:p-6 w-full bg-white/95 border-amber-200/90 shadow-xs relative overflow-hidden">
@@ -115,9 +104,9 @@ export const WindfallSimulator: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-12 gap-5 mb-5">
         {/* Cash Amount Input & Preset Chips */}
         <div className="md:col-span-7 space-y-3">
-          <label className="text-xs font-bold text-slate-800 flex items-center justify-between">
+          <label htmlFor="windfall-amount" className="text-xs font-bold text-slate-800 flex items-center justify-between">
             <span>Extra Available Cash</span>
-            <span className="text-slate-500 font-normal">Enter dollar amount or tap presets</span>
+            <span className="text-slate-500 font-normal">Enter an amount or tap presets</span>
           </label>
 
           <div className="relative">
@@ -125,27 +114,28 @@ export const WindfallSimulator: React.FC = () => {
               {currencyConfig.symbol}
             </span>
             <input
+              id="windfall-amount"
               type="number"
               min="0"
               step="50"
               value={windfall.amount === 0 ? '' : windfall.amount}
               onChange={(e) => handleAmountChange(Number(e.target.value))}
               placeholder="e.g. 1500"
-              className="w-full pl-9 pr-4 py-3 rounded-xl bg-white border-2 border-amber-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600 text-slate-900 font-black text-lg shadow-2xs"
+              className="w-full pl-14 pr-4 py-3 rounded-xl bg-white border-2 border-amber-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600 text-slate-900 font-black text-lg shadow-2xs"
             />
           </div>
 
           {/* Quick preset buttons */}
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <span className="text-[11px] text-slate-500 font-semibold">Quick add:</span>
-            {[250, 500, 1000, 2500, 5000].map((preset) => (
+            {quickAmounts.map((preset) => (
               <button
                 key={preset}
                 type="button"
                 onClick={() => handleQuickAdd(preset)}
                 className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-300 transition-all active:scale-95 shadow-2xs"
               >
-                +${preset.toLocaleString()}
+                +{formatCurrency(preset, 0)}
               </button>
             ))}
           </div>
@@ -153,13 +143,14 @@ export const WindfallSimulator: React.FC = () => {
 
         {/* Application Mode & Allocation Target */}
         <div className="md:col-span-5 space-y-3">
-          <label className="text-xs font-bold text-slate-800">
+          <div className="text-xs font-bold text-slate-800">
             Allocation Mode
-          </label>
+          </div>
 
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
+              aria-pressed={windfall.type === 'one_time'}
               onClick={() => setWindfall({ ...windfall, type: 'one_time' })}
               className={`p-2.5 rounded-xl border text-xs font-semibold text-left transition-all ${
                 windfall.type === 'one_time'
@@ -173,6 +164,7 @@ export const WindfallSimulator: React.FC = () => {
 
             <button
               type="button"
+              aria-pressed={windfall.type === 'monthly_extra'}
               onClick={() => setWindfall({ ...windfall, type: 'monthly_extra' })}
               className={`p-2.5 rounded-xl border text-xs font-semibold text-left transition-all ${
                 windfall.type === 'monthly_extra'
@@ -187,16 +179,17 @@ export const WindfallSimulator: React.FC = () => {
 
           {/* Target Account Selector */}
           <div>
-            <label className="text-[11px] font-bold text-slate-700 block mb-1">
+            <label htmlFor="windfall-target" className="text-[11px] font-bold text-slate-700 block mb-1">
               Target Creditor / Account
             </label>
             <select
+              id="windfall-target"
               value={windfall.targetDebtId || 'auto_optimal'}
               onChange={(e) => setWindfall({ ...windfall, targetDebtId: e.target.value })}
               className="w-full px-3 py-2 rounded-lg bg-white border border-amber-200 text-xs text-slate-800 font-semibold focus:outline-none focus:ring-1 focus:ring-emerald-500 shadow-2xs"
             >
               <option value="auto_optimal">Auto ({strategy === 'snowball' ? 'smallest balance' : strategy === 'custom' ? 'your priority' : 'highest APR'})</option>
-              {debts.map((d) => (
+              {debts.filter((d) => d.balance > 0).map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name} ({d.apr}% APR • {formatCurrency(d.balance)})
                 </option>
@@ -221,7 +214,13 @@ export const WindfallSimulator: React.FC = () => {
                 Applying <strong className="text-emerald-800 font-bold">{formatCurrency(windfall.amount)}</strong>{' '}
                 {windfall.type === 'one_time' ? 'as a lump sum' : 'monthly'}{' '}
                 to <strong className="text-amber-800 font-bold">{targetDebtName}</strong>{' '}
-                {monthsSaved > 0 ? (
+                {notComparable ? (
+                  <>
+                    {windfallImpact?.newDebtFreeDate === 'Does not pay off'
+                      ? 'is not enough to stop the balance from growing.'
+                      : `turns a plan that never pays off into one that finishes by ${newDate}!`}
+                  </>
+                ) : monthsSaved > 0 ? (
                   <>
                     shaves <strong className="text-emerald-800 font-extrabold">{monthsSaved} months</strong> off your timeline and
                     saves <strong className="text-emerald-800 font-extrabold">{formatCurrency(interestSaved)}</strong> in avoided interest!
@@ -254,18 +253,18 @@ export const WindfallSimulator: React.FC = () => {
             </div>
             <div>
               <div className="text-[10px] text-slate-600 uppercase font-bold">Interest Avoided</div>
-              <div className="font-black text-sm text-emerald-800">+{formatCurrency(interestSaved)}</div>
+              <div className="font-black text-sm text-emerald-800">{notComparable ? '—' : `+${formatCurrency(interestSaved)}`}</div>
             </div>
             <div>
               <div className="text-[10px] text-slate-600 uppercase font-bold">Months Accelerated</div>
-              <div className="font-black text-sm text-emerald-800">{monthsSaved} mos faster</div>
+              <div className="font-black text-sm text-emerald-800">{notComparable ? '—' : `${monthsSaved} mos faster`}</div>
             </div>
           </div>
         </div>
       ) : (
         <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 text-center">
           <p className="text-xs text-slate-600 font-medium">
-            Type any bonus amount above or click a quick-add chip (e.g. +$1,000) to see how much interest you can eliminate.
+            Type any bonus amount above or click a quick-add chip to see how much interest you can eliminate.
           </p>
         </div>
       )}

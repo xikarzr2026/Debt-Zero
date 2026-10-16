@@ -13,6 +13,7 @@ import { AmortizationTable } from '@/components/AmortizationTable';
 import { CashFlowModal } from '@/components/CashFlowModal';
 import { ImportExportModal } from '@/components/ImportExportModal';
 import { HelpModal } from '@/components/HelpModal';
+import { planSavings, currencyDecimals } from '@/lib/debtEngine';
 import {
   LayoutDashboard,
   CreditCard,
@@ -54,9 +55,20 @@ export default function HomePage() {
     );
   }
 
-  const baselineInterest = comparison.baselineMinimums.totalInterestPaid;
-  const currentInterest = activePlan.totalInterestPaid;
-  const interestSaved = Math.max(0, baselineInterest - currentInterest);
+  const { interestSaved } = planSavings(
+    comparison.baselineMinimums,
+    activePlan,
+    currencyDecimals(profile.currency)
+  );
+  const baselineNeverPays = comparison.baselineMinimums.unpayable;
+
+  const tabs: Array<{ id: typeof activeTab; label: string; icon: React.ReactNode }> = [
+    { id: 'all', label: 'Complete Dashboard (All)', icon: <LayoutDashboard className="w-3.5 h-3.5" /> },
+    { id: 'overview', label: 'Strategies & Forecast', icon: <Zap className="w-3.5 h-3.5 text-amber-300" /> },
+    { id: 'debts', label: `Debts Inventory (${debts.length})`, icon: <CreditCard className="w-3.5 h-3.5 text-sky-300" /> },
+    { id: 'windfall', label: 'Windfall / Bonus Allocator', icon: <Gift className="w-3.5 h-3.5 text-amber-300" /> },
+    { id: 'amortization', label: 'Amortization Schedule', icon: <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-200" /> },
+  ];
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -102,15 +114,20 @@ export default function HomePage() {
                       , saving <strong className="text-emerald-700 font-bold">{formatCurrency(interestSaved)}</strong> in unnecessary interest.
                     </>
                   )}
+                  {baselineNeverPays && strategy !== 'minimums_only' && (
+                    <> — paying only the minimums would never clear this debt.</>
+                  )}
                 </>
               )}
             </p>
           </div>
 
           {/* Quick Cash Flow Summary Banner */}
-          <div
+          <button
+            type="button"
             onClick={() => setCashFlowModalOpen(true)}
-            className="cursor-pointer glass-panel glass-panel-hover rounded-xl p-3.5 border border-amber-200/80 flex items-center gap-4 self-start md:self-auto bg-white/90"
+            aria-label="Edit income and expenses"
+            className="cursor-pointer text-left glass-panel glass-panel-hover rounded-xl p-3.5 border border-amber-200/80 flex items-center gap-4 self-start md:self-auto bg-white/90"
           >
             <div>
               <div className="text-[10px] uppercase font-semibold text-slate-500">Monthly Net Income</div>
@@ -128,77 +145,35 @@ export default function HomePage() {
             <div className="h-7 w-[1px] bg-amber-200" />
             <div>
               <div className="text-[10px] uppercase font-semibold text-emerald-700">Free Cash Flow</div>
-              <div className="font-extrabold text-sm text-emerald-700">
+              <div className={`font-extrabold text-sm ${freeCashFlowData.isDeficit ? 'text-rose-700' : 'text-emerald-700'}`}>
                 {formatCurrency(freeCashFlowData.freeCashFlow)}
               </div>
             </div>
-          </div>
+          </button>
         </div>
 
         {/* 4 Hero KPI Cards */}
         <HeroMetricCards onOpenCashFlow={() => setCashFlowModalOpen(true)} />
 
         {/* Section Navigation Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-amber-200/80">
-          <button
-            onClick={() => setActiveTab('all')}
-            className={`px-3.5 py-2 rounded-xl text-xs transition-all flex items-center gap-2 whitespace-nowrap ${
-              activeTab === 'all'
-                ? 'bg-gradient-to-r from-emerald-700 to-emerald-600 text-white font-bold shadow-md shadow-emerald-700/20'
-                : 'text-slate-600 hover:text-emerald-800 hover:bg-amber-100/70 font-medium'
-            }`}
-          >
-            <LayoutDashboard className="w-3.5 h-3.5" />
-            <span>Complete Dashboard (All)</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('overview')}
-            className={`px-3.5 py-2 rounded-xl text-xs transition-all flex items-center gap-2 whitespace-nowrap ${
-              activeTab === 'overview'
-                ? 'bg-gradient-to-r from-emerald-700 to-emerald-600 text-white font-bold shadow-md shadow-emerald-700/20'
-                : 'text-slate-600 hover:text-emerald-800 hover:bg-amber-100/70 font-medium'
-            }`}
-          >
-            <Zap className="w-3.5 h-3.5 text-amber-300" />
-            <span>Strategies & Forecast</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('debts')}
-            className={`px-3.5 py-2 rounded-xl text-xs transition-all flex items-center gap-2 whitespace-nowrap ${
-              activeTab === 'debts'
-                ? 'bg-gradient-to-r from-emerald-700 to-emerald-600 text-white font-bold shadow-md shadow-emerald-700/20'
-                : 'text-slate-600 hover:text-emerald-800 hover:bg-amber-100/70 font-medium'
-            }`}
-          >
-            <CreditCard className="w-3.5 h-3.5 text-sky-300" />
-            <span>Debts Inventory ({debts.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('windfall')}
-            className={`px-3.5 py-2 rounded-xl text-xs transition-all flex items-center gap-2 whitespace-nowrap ${
-              activeTab === 'windfall'
-                ? 'bg-gradient-to-r from-emerald-700 to-emerald-600 text-white font-bold shadow-md shadow-emerald-700/20'
-                : 'text-slate-600 hover:text-emerald-800 hover:bg-amber-100/70 font-medium'
-            }`}
-          >
-            <Gift className="w-3.5 h-3.5 text-amber-300" />
-            <span>Windfall / Bonus Allocator</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('amortization')}
-            className={`px-3.5 py-2 rounded-xl text-xs transition-all flex items-center gap-2 whitespace-nowrap ${
-              activeTab === 'amortization'
-                ? 'bg-gradient-to-r from-emerald-700 to-emerald-600 text-white font-bold shadow-md shadow-emerald-700/20'
-                : 'text-slate-600 hover:text-emerald-800 hover:bg-amber-100/70 font-medium'
-            }`}
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-200" />
-            <span>Amortization Schedule</span>
-          </button>
+        <div role="tablist" aria-label="Dashboard sections" className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-amber-200/80">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-3.5 py-2 rounded-xl text-xs transition-all flex items-center gap-2 whitespace-nowrap ${
+                activeTab === tab.id
+                  ? 'bg-gradient-to-r from-emerald-700 to-emerald-600 text-white font-bold shadow-md shadow-emerald-700/20'
+                  : 'text-slate-600 hover:text-emerald-800 hover:bg-amber-100/70 font-medium'
+              }`}
+            >
+              {tab.icon}
+              <span>{tab.label}</span>
+            </button>
+          ))}
         </div>
 
         {/* Dynamic Tab Contents */}

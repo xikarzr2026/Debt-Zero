@@ -95,12 +95,26 @@ export function calculateFreeCashFlow(
   };
 }
 
+/** Smallest recommended minimum-payment cushion, in each currency's own units. */
+const MIN_PAYMENT_FLOOR: Record<CurrencyCode, number> = {
+  USD: 25,
+  CAD: 25,
+  EUR: 25,
+  GBP: 25,
+  AUD: 25,
+  MXN: 500,
+  JPY: 2500,
+};
+
 /**
  * Checks for negative amortization:
  * If minimum payment is less than or equal to monthly interest accrued,
  * the balance will never decrease.
  */
-export function detectNegativeAmortization(debts: DebtItem[]): Array<{
+export function detectNegativeAmortization(
+  debts: DebtItem[],
+  currency: CurrencyCode | string = 'USD'
+): Array<{
   debtId: string;
   debtName: string;
   interestAccruing: number;
@@ -109,14 +123,16 @@ export function detectNegativeAmortization(debts: DebtItem[]): Array<{
   recommendedMinimum: number;
 }> {
   const alerts: ReturnType<typeof detectNegativeAmortization> = [];
+  const decimals = currencyDecimals(currency);
+  const floor = MIN_PAYMENT_FLOOR[currency as CurrencyCode] ?? 25;
 
   for (const debt of debts) {
     if (debt.balance <= 0) continue;
-    const monthlyInterest = calculateMonthlyInterest(debt.balance, debt.apr);
+    const monthlyInterest = calculateMonthlyInterest(debt.balance, debt.apr, decimals);
     if (debt.minPayment <= monthlyInterest) {
-      const deficit = roundHalfUp(monthlyInterest - debt.minPayment);
-      // Recommend interest + at least 1.5% of principal or $25, whichever is greater
-      const recommended = roundHalfUp(monthlyInterest + Math.max(25, debt.balance * 0.015));
+      const deficit = roundHalfUp(monthlyInterest - debt.minPayment, decimals);
+      // Recommend interest + at least 1.5% of principal or the currency floor, whichever is greater
+      const recommended = roundHalfUp(monthlyInterest + Math.max(floor, debt.balance * 0.015), decimals);
       alerts.push({
         debtId: debt.id,
         debtName: debt.name,
@@ -266,6 +282,14 @@ export function simulatePayoffSchedule({
   // Track rolled-over freed minimum payments from eliminated debts
   let rolledOverMinPayments = 0;
 
+  const byId = new Map(activeDebts.map((d) => [d.id, d]));
+  const paidOffIds = new Set<string>();
+  const isMinimumsOnly = strategy === 'minimums_only';
+  // Minimums-only has no extra pool of its own; a simulated windfall still goes highest-APR first.
+  const extraOrder: OptimizationStrategy = isMinimumsOnly ? 'avalanche' : strategy;
+  const explicitTargetId =
+    windfall?.targetDebtId && windfall.targetDebtId !== 'auto_optimal' ? windfall.targetDebtId : null;
+
   while (activeDebts.some((d) => d.currentBalance > 0.01) && month < maxMonths) {
     month++;
     const currentDate = new Date(startDate.getFullYear(), startDate.getMonth() + month - 1, 1);
@@ -304,31 +328,19 @@ export function simulatePayoffSchedule({
 
     // Step 2: Determine total extra pool available this month
     // Base surplus + rolled over freed minimum payments
-    let availableExtra = strategy === 'minimums_only' ? 0 : Math.max(0, monthlySurplus) + rolledOverMinPayments;
+    let availableExtra = isMinimumsOnly ? 0 : Math.max(0, monthlySurplus) + rolledOverMinPayments;
 
-    // Handle Windfall
-    if (windfall && windfall.amount > 0) {
-      if (windfall.type === 'one_time' && month === 1) {
-        availableExtra += windfall.amount;
-      } else if (windfall.type === 'monthly_extra') {
-        availableExtra += windfall.amount;
-      }
+    // Windfall: one-time lands in month 1, recurring lands every month
+    let windfallExtra = 0;
+    if (windfall && windfall.amount > 0 && (windfall.type === 'monthly_extra' || month === 1)) {
+      windfallExtra = windfall.amount;
     }
 
-    // Sort active debts by selected strategy priority to direct extra payments
+    // Sort active debts by priority (pre-payment balances) to direct extra payments
     const sortedActive = sortDebtsByStrategy(
       debtStatesThisMonth.filter((s) => s.isActive).map((s) => s.debt),
-      strategy
+      extraOrder
     );
-
-    // If windfall specifies a target debt in month 1, we can prioritize that specific debt first
-    let prioritizedDebtId = sortedActive.length > 0 ? sortedActive[0].id : null;
-    if (windfall?.targetDebtId && windfall.targetDebtId !== 'auto_optimal' && month === 1) {
-      const targeted = sortedActive.find((d) => d.id === windfall.targetDebtId);
-      if (targeted) {
-        prioritizedDebtId = targeted.id;
-      }
-    }
 
     // Step 3: Execute payments
     // First, pay the required minimum on each active debt
@@ -345,8 +357,13 @@ export function simulatePayoffSchedule({
       const startBal = debt.currentBalance;
 
       // Principal portion from minimum
-      const principalFromMin = Math.max(0, paymentForDebt - interest);
+      const principalFromMin = roundHalfUp(Math.max(0, paymentForDebt - interest), decimals);
       debt.currentBalance = roundHalfUp(Math.max(0, debt.currentBalance + interest - paymentForDebt), decimals);
+
+      // A debt retired with less than its full minimum frees the rest for this month's extra pool
+      if (!isMinimumsOnly) {
+        availableExtra += Math.max(0, debt.minPayment - paymentForDebt);
+      }
 
       // Store initial state for extra allocation pass
       paymentsThisMonth.push({
@@ -365,45 +382,42 @@ export function simulatePayoffSchedule({
     }
 
     // Step 4: Allocate discretionary surplus/windfall to priority debts (cascade rollover)
-    if (availableExtra > 0.01 && strategy !== 'minimums_only') {
-      // Re-order by priority, putting explicit windfall target first if month 1
-      const priorityOrder = [...sortedActive].sort((a, b) => {
-        if (month === 1 && prioritizedDebtId) {
-          if (a.id === prioritizedDebtId) return -1;
-          if (b.id === prioritizedDebtId) return 1;
-        }
-        return 0;
-      });
+    const recordsById = new Map(paymentsThisMonth.map((p) => [p.debtId, p]));
+    const applyExtra = (debtId: string, amount: number): number => {
+      const liveDebt = byId.get(debtId);
+      const paymentRecord = recordsById.get(debtId);
+      if (!liveDebt || !paymentRecord || liveDebt.currentBalance <= 0.01 || amount <= 0.01) return 0;
 
-      for (const targetDebt of priorityOrder) {
-        if (availableExtra <= 0.01) break;
+      const extraToApply = roundHalfUp(Math.min(amount, liveDebt.currentBalance), decimals);
+      liveDebt.currentBalance = roundHalfUp(Math.max(0, liveDebt.currentBalance - extraToApply), decimals);
 
-        const liveDebt = activeDebts.find((d) => d.id === targetDebt.id);
-        const paymentRecord = paymentsThisMonth.find((p) => p.debtId === targetDebt.id);
+      paymentRecord.extraPayment = roundHalfUp(paymentRecord.extraPayment + extraToApply, decimals);
+      paymentRecord.principalPaid = roundHalfUp(paymentRecord.principalPaid + extraToApply, decimals);
+      paymentRecord.totalPayment = roundHalfUp(paymentRecord.totalPayment + extraToApply, decimals);
+      paymentRecord.endBalance = liveDebt.currentBalance;
+      return extraToApply;
+    };
 
-        if (!liveDebt || !paymentRecord || liveDebt.currentBalance <= 0.01) continue;
+    // An explicitly targeted windfall goes to its target first; any excess joins the pool
+    if (explicitTargetId && windfallExtra > 0) {
+      windfallExtra = roundHalfUp(windfallExtra - applyExtra(explicitTargetId, windfallExtra), decimals);
+    }
+    availableExtra = roundHalfUp(availableExtra + windfallExtra, decimals);
 
-        const amountToPayoff = liveDebt.currentBalance;
-        const extraToApply = roundHalfUp(Math.min(availableExtra, amountToPayoff), decimals);
-
-        liveDebt.currentBalance = roundHalfUp(Math.max(0, liveDebt.currentBalance - extraToApply), decimals);
-        availableExtra = roundHalfUp(Math.max(0, availableExtra - extraToApply), decimals);
-
-        paymentRecord.extraPayment = roundHalfUp(paymentRecord.extraPayment + extraToApply, decimals);
-        paymentRecord.principalPaid = roundHalfUp(paymentRecord.principalPaid + extraToApply, decimals);
-        paymentRecord.totalPayment = roundHalfUp(paymentRecord.totalPayment + extraToApply, decimals);
-        paymentRecord.endBalance = liveDebt.currentBalance;
-      }
+    for (const targetDebt of sortedActive) {
+      if (availableExtra <= 0.01) break;
+      availableExtra = roundHalfUp(Math.max(0, availableExtra - applyExtra(targetDebt.id, availableExtra)), decimals);
     }
 
     // Step 5: Check payoffs and update milestones & rollovers
     for (const p of paymentsThisMonth) {
-      const debt = activeDebts.find((d) => d.id === p.debtId)!;
+      const debt = byId.get(p.debtId)!;
       monthTotalPrincipal += p.principalPaid;
       monthTotalPayment += p.totalPayment;
       debt.cumulativePrincipal += p.principalPaid;
 
-      if (debt.currentBalance <= 0.01 && !milestones.some((m) => m.debtId === debt.id)) {
+      if (debt.currentBalance <= 0.01 && !paidOffIds.has(debt.id)) {
+        paidOffIds.add(debt.id);
         debt.currentBalance = 0;
         p.endBalance = 0;
         p.isPaidOffThisMonth = true;
@@ -421,7 +435,7 @@ export function simulatePayoffSchedule({
         });
 
         // Add this debt's minimum payment into the rollover snowball pool!
-        if (strategy !== 'minimums_only') {
+        if (!isMinimumsOnly) {
           rolledOverMinPayments += debt.minPayment;
         }
       }
@@ -480,6 +494,23 @@ export function simulatePayoffSchedule({
 /**
  * Runs comparative engine against Avalanche, Snowball, Minimums-Only, and Windfall simulations
  */
+/**
+ * Interest and months saved by `plan` versus `baseline`. Savings are only comparable when both
+ * plans pay off; otherwise the baseline figures are 50-year truncations, not real costs.
+ */
+export function planSavings(
+  baseline: PayoffStrategyResult,
+  plan: PayoffStrategyResult,
+  decimals: number = 2
+): { comparable: boolean; interestSaved: number; monthsSaved: number } {
+  const comparable = !baseline.unpayable && !plan.unpayable;
+  return {
+    comparable,
+    interestSaved: savedInterest(baseline, plan, decimals),
+    monthsSaved: savedMonths(baseline, plan),
+  };
+}
+
 function savedInterest(baseline: PayoffStrategyResult, accelerated: PayoffStrategyResult, decimals: number): number {
   if (baseline.unpayable || accelerated.unpayable) return 0;
   return roundHalfUp(Math.max(0, baseline.totalInterestPaid - accelerated.totalInterestPaid), decimals);
@@ -668,9 +699,14 @@ export function runEngineComparison({
 /**
  * Currency formatter helper
  */
-export function formatCurrencyValue(amount: number, symbol: string = '$', decimals: number = 0): string {
+export function formatCurrencyValue(
+  amount: number,
+  symbol: string = '$',
+  decimals: number = 0,
+  locale: string = 'en-US'
+): string {
   if (isNaN(amount) || amount === null || amount === undefined) return `${symbol}0`;
-  const formatted = Math.abs(amount).toLocaleString('en-US', {
+  const formatted = Math.abs(amount).toLocaleString(locale, {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });
@@ -780,7 +816,13 @@ function sanitizeProfile(raw: unknown): import('../types/debt.ts').UserFinancial
     subscriptions: Math.max(0, finiteNumber(breakdownRaw.subscriptions)),
     other: Math.max(0, finiteNumber(breakdownRaw.other)),
   };
-  const livingFromBreakdown = Object.values(expensesBreakdown).reduce((s, v) => s + v, 0);
+  let livingFromBreakdown = Object.values(expensesBreakdown).reduce((s, v) => s + v, 0);
+  // A flat total with no breakdown is kept as "other" so the app (which sums the breakdown) still sees it
+  const flatLiving = Math.max(0, finiteNumber(row.livingExpenses));
+  if (livingFromBreakdown === 0 && flatLiving > 0) {
+    expensesBreakdown.other = flatLiving;
+    livingFromBreakdown = flatLiving;
+  }
   const payFrequency = IMPORT_FREQUENCIES.has(row.payFrequency as PayFrequency)
     ? (row.payFrequency as PayFrequency)
     : 'monthly';
@@ -794,13 +836,13 @@ function sanitizeProfile(raw: unknown): import('../types/debt.ts').UserFinancial
     payFrequency,
     incomePerPeriod,
     monthlyNetIncome: normalizeToMonthlyIncome(incomePerPeriod, payFrequency),
-    livingExpenses: livingFromBreakdown || Math.max(0, finiteNumber(row.livingExpenses)),
+    livingExpenses: livingFromBreakdown,
     expensesBreakdown,
     ...(Number.isFinite(manualExtra) ? { manualExtraMonthlySurplus: manualExtra } : {}),
   };
 }
 
-export function parseDebtBackup(jsonStr: string): {
+export function parseDebtBackup(jsonStr: string, options: { allowEmptyDebts?: boolean } = {}): {
   success: boolean;
   error?: string;
   profile?: import('../types/debt.ts').UserFinancialProfile;
@@ -835,11 +877,11 @@ export function parseDebtBackup(jsonStr: string): {
     const debt = sanitizeDebt(item, index);
     if (!debt) return;
     let id = debt.id;
-    while (seen.has(id)) id = `${debt.id}-${debts.length + 1}`;
+    for (let n = 2; seen.has(id); n++) id = `${debt.id}-${n}`;
     seen.add(id);
     debts.push({ ...debt, id });
   });
-  if (debts.length === 0) {
+  if (debts.length === 0 && !options.allowEmptyDebts) {
     return { success: false, error: 'No usable debts in that backup. Check balances and APRs.' };
   }
   const strategy = IMPORT_STRATEGIES.has(row.strategy as OptimizationStrategy)

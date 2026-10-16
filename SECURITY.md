@@ -6,7 +6,8 @@ We provide security updates and patches for the following versions:
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.0.x (main branch) | :white_check_mark: |
+| 1.2.x (main branch) | :white_check_mark: |
+| < 1.2   | :x:                |
 
 ---
 
@@ -35,4 +36,7 @@ Please **do not** report security vulnerabilities through public GitHub issues o
 
 - **Zero Data Transmission**: DebtZero never sends user debt amounts, balances, APRs, income figures, or credentials to any remote server or third-party service.
 - **Client-Side Only**: All math and amortization logic runs strictly in the user's browser.
-- **Dependency Auditing**: Automated Dependabot and GitHub CodeQL scanning are enabled to monitor and patch vulnerabilities in project dependencies.
+- **Validated Input**: Imported backups and data read back from `localStorage` are size-limited, type-checked, and range-checked before use. CSV exports neutralise spreadsheet formulas.
+- **Content Security Policy**: Production builds ship a restrictive CSP meta tag (no third-party origins, no plugins, no form submission).
+- **Dependency Auditing**: GitHub CodeQL scans every push and pull request, and `npm audit` is reviewed when dependencies change. Dependabot version-update PRs are disabled.
+- **Local Data Removal**: **Backup & Restore → Clear All Data** removes everything the app stored in the browser.

@@ -239,7 +239,7 @@ export const MonthlyChecklist: React.FC = () => {
       {/* Footer Total */}
       <div className="mt-4 pt-3 border-t border-amber-200/80 flex items-center justify-between text-xs">
         <span className="text-slate-600 font-medium">
-          Total Discretionary Cash Outflow this Month:
+          Total Debt Payments this Month:
         </span>
         <span className="font-black text-sm text-slate-900">
           {formatCurrency(currentMonthSnapshot.totalPayment)}
